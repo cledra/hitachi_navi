@@ -1,0 +1,383 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (C) 2014, PCA Peugeot Citro�n, XS Embedded GmbH, TomTom International B.V., Continental Automotive GmbH, BMW Car IT GmbH,  Alpine Electronics R&D Europe GmbH, AISIN AW CO., LTD.,  Neusoft Technology Solutions GmbH, Jaguar Land Rover Limited, Visteon Corporation, Elektrobit Automotive GmbH
+// This Source Code Form is subject to the terms of the
+// Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with
+// this file, you can obtain one at http://mozilla.org/MPL/2.0/.
+
+package org.genivi.navigation.poiservice
+
+import org.genivi.CommonTypes.* from "../../CommonTypes.fidl"
+import org.genivi.navigation.NavigationTypes.* from "../NavigationTypes.fidl"
+
+typeCollection POIServiceTypes {
+	version {
+		 major 4 
+		 minor 0 
+	}
+	
+   <** @description:Unique ID for a POI results**>
+    typedef POI_ID is UInt32
+    
+    <** @description:Unique ID for a POI Icon Resource**>
+    typedef ResourceID is UInt32
+    
+    <** @description:Unique ID for an attribute**>
+    typedef AttributeID is UInt32
+ 
+    typedef ContentAccessModuleID is UInt8
+    
+      <** @description: Set of CategoryID**>
+    enumeration CategoryIDSet extends BasicEnum { 
+		AIRPORT   			= 1
+		SPORTING   			= 2
+		FERRY_TERMINAL   	= 3
+		ENTERTAINMENT   	= 4
+		HOTEL_MOTEL   		= 5
+		RESTAURANT   		= 6
+		PARKING   			= 7
+		FUEL_STATION   		= 8
+		SERVICE_AREA   		= 9
+		CAR_REPAIR_SHOP   	= 10
+		CAR_DEALER   		= 11
+		CAR_RENTAL_AGENCY   = 12
+		MEDICAL   			= 13
+		SHOPPING   			= 14
+		BUSINESS_AREA   	= 15
+		LANDMARK   			= 16
+		FLASH_RADAR   		= 17
+		POI_TRUCK   		= 18
+		SANCTUARY   		= 19
+		TOLLBOOTH   		= 20
+		KIOSK   			= 21
+		WATER_CLOSET   		= 22
+		BANK_AND_FINANCIAL 	= 23
+		TRAVEL   			= 24
+		TOURIST   			= 25
+		PUBLIC_BUILDING   	= 26
+		RAILWAY_STATION   	= 27
+     }
+ 
+     <** @description: Type of Attribute**>
+    enumeration AttributeType { //Base 0x0500
+    	STRING		= 1280
+        INTEGER		= 1281
+        BOOLEAN		= 1282
+        COORDINATES	= 1283
+    }
+
+   <** @description: Current state of the search**>
+    enumeration SearchStatusState extends BasicEnum { //Base 0x0510
+        NOT_STARTED		= 1296
+        SEARCHING		= 1297
+        FINISHED		= 1298
+    }
+    
+    <** @description: Type of Operator**>
+    enumeration OperatorType extends BasicEnum  { //Base 0x0520
+        MORE_THAN		= 1312
+        LESS_THAN		= 1313
+        EQUAL			= 1314
+    }
+
+    <** @description: Reason of update**>
+    enumeration SortOption { //Base 0x0560
+        SORT_DEFAULT		= 1376
+        SORT_BY_DISTANCE	= 1377
+        SORT_BY_TIME		= 1378
+        ATTRIBUTE_CUSTOM	= 1379
+    }
+
+    <** @description: Reason of update**>
+    enumeration UpdateReason { //Base 0x0700
+        ADDED			= 1792
+        REMOVED			= 1793
+        ATTR_ADDED		= 1794
+        ATTR_MODIFIED	= 1795
+        ATTR_REMOVED  	= 1796
+    }
+
+    <** @description: Reason of update**>
+    enumeration RouteStatus { //Base 0x0600
+        OFF_ROUTE		= 1536
+        ON_ROUTE		= 1537
+        INSIDE_CORRIDOR	= 1538
+    }
+
+    <** @description: Configuration changed**>
+    enumeration ConfigurationChangedReason {
+        LOCALES
+    }
+
+    <** @description: Settings**>
+    enumeration Settings {
+        INVALID 				= 0
+        UNITS_OF_MEASUREMENT 	= 48 //Base 0x0030
+        LOCALE 					= 37
+        TIME_FORMAT 			= 3
+        COORDINATES_FORMAT 		= 6
+    }
+
+    <** @description: Different types of resources for icons**>
+    union Icon {
+        ResourceID[] id
+        String url
+    }
+    
+    <** @description: Different type of media**>
+    union Media {
+        ResourceID[] id
+        String url
+    }
+    
+
+  <** @description: values for attribute. **>
+    union AttributeValue {
+        Int32 intValue
+        String stringValue
+        Boolean boolValue
+    }
+    	
+	<**	@description:**>
+	struct Details {
+		<**	@description : list of parent categories unique id.**>
+		CategoryID[] parentsId
+		<**	@description : visual icons set.**>
+		Icon icons
+		<**	@description : name.**>
+		String name
+		<**	@description : short category description (optional).**>
+		String shortDesc
+		<**	@description : media associated (html web site, audio, video, ...) (optional).**>
+		Media media
+	}
+	
+	<** @description:**>			
+	struct Operator {
+        <** @description : enum(INVALID,MORE_THAN,LESS_THAN,EQUAL, ....).**>
+        OperatorType type
+        <** @description : localized display name.**>
+        String name
+        <** @description : value to use if this comparator is selected.**>
+        AttributeValue value
+	}
+	
+	
+	<**	@description: Describes an attribte which is associcated to an category. Use more than one operator to specify choice options i.e. differtent accpeted credid cards 
+	used in categor details and update category**>
+	struct CategoryAttribute {
+        <** @description : id of attribute .**>
+        AttributeID id
+        <** @description : localized display name.**>
+        String name
+        <** @description : enum(INVALID,STRING,INTEGER,COORDINATES ...).**>
+        AttributeType type
+		<**	@description:**>
+		Operator[] operators
+	}
+	
+	
+	<** @description:**>			
+	struct CategorySortOption {
+		<**	@description : enum(SORT_DEFAULT,SORT_BY_DISTANCE,SORT_BY_TIME,ATTRIBUTE_CUSTOM, ... ).**>
+		CategoryID id
+		<**	@description : localized name to be displayed by application.**>
+		String name
+	}
+	
+	
+	<** @description:**>			
+	struct CAMCategory {
+		<**	@description : struct(list of parents_id, icons, name, short_desc, media).**>
+		Details details
+		<**	@description : array[struct(name, type, array[struct(operator_id, operator_name)])].**>
+		CategoryAttribute[] attributeList
+		<**	@description : array[struct(id, name)].**>
+		CategorySortOption[] sortOptions
+	}
+	
+	
+ 	<** @description:**>			
+	struct CAMCategoryUpdate {
+ 		<**	@description : enum(INVALID,ALL_CATEGORIES,AIRPORT,RESTAURANT,HOTEL,GAZ_STATION,CAR_PARK, ...). Note: A POI category is a unique ID. It could be a predefined category or a custom one defined by a POI plug-in **>			
+		CategoryID id	
+		<**	@description : array[struct(name, type, array[struct(operator_id, operator_name)])].**>
+		CategoryAttribute[] attributeList
+		<**	@description : array[struct(id, name)].**>
+		CategorySortOption[] sortOptions
+	}
+	
+
+	
+  	<** @description: Attribute associcated to an POI used in addPOI and POI Search Result(both CAM and Service)**>			
+    struct PoiAttribute
+    {
+		<** @description:attribute unique id (see data model)**>			
+        AttributeID id
+ 		<** @description:enum(INVALID,STRING,INTEGER,COORDINATES ...)**>			
+        AttributeType type
+		<** @description:The value depends on the attribute specifications and type**>			
+        AttributeValue value
+    }
+	
+
+ 	
+	<** @description:**>			
+    struct CategoryAndRadius
+    {
+ 		<**	@description : enum(INVALID,ALL_CATEGORIES,AIRPORT,RESTAURANT,HOTEL,GAZ_STATION,CAR_PARK, ...). Note: A POI category is a unique ID. It could be a predefined category or a custom one defined by a POI plug-in **>			
+        CategoryID id
+ 		<**	@description : activation or search radius around the position (in 10 meters) for the category. If value is 0 (zero), the default radius (defined for a category) is applied.**>
+        UInt32 radius
+    }
+	
+	
+  	<** @description:**>			
+    struct PoiDetails
+    {
+		<** @description:POI id**>			
+        POI_ID id
+		<** @description:POI name**>			
+        String name
+        <** @description:POI location.**>           
+        Coordinate3D location
+    }
+	
+ 	
+ 	<** @description:**>			
+    struct SearchResultDetails
+    {
+  		<** @description: struct(id,name,latitude,longitude,altitude).**>			
+        PoiDetails details
+  		<** @description: array[unique_id].**>			
+        CategoryID[] categories
+   		<** @description: array[struct(name,type,value)].**>			
+        PoiAttribute[] attributeList
+    }
+
+ 	<** @description:**>			
+    struct SearchResult
+    {
+		<** @description:POI id**>			
+        POI_ID id
+		<** @description:distance in meters to poi from center of the search or from vehicle if search along**>			
+        UInt32 distance
+		<** @description:enum(OFF_ROUTE,ON_ROUTE,INSIDE_CORRIDOR, ... )**>			
+        RouteStatus routeStatus
+		<** @description:List of attributes requested. It could be empty**>			
+        PoiAttribute[] attributeList
+    }
+
+	
+  	<** @description:**>			
+    struct PoiCAMDetails 
+    {
+ 		<** @description:POI unique id as known by the content access module. This id will be used by POI service to request POI details.**>			
+        POI_ID sourceId
+  		<** @description:POI name.**>			
+        String name
+  		<** @description:POI category unique id.**>			
+        CategoryID category
+ 		<** @description:POI location.**>			
+        Coordinate3D location
+ 		<** @description:distance in meters to poi from center of the search.**>			
+        UInt16 distance
+ 		<** @description:List of attributes requested. It could be empty.**>			
+        PoiAttribute[] attributeList
+    }
+	
+ 	
+  	<** @description: used in setAttrbutes and CAM startPOISearch**>			
+    struct AttributeDetails
+    {
+        <** @description : id of attribute .**>
+        AttributeID id
+        <** @description : enum(INVALID,ALL_CATEGORIES,AIRPORT,RESTAURANT,HOTEL,GAZ_STATION,CAR_PARK, ...). Note: A POI category is a unique ID. It could be a predefined category or a custom one defined by a POI plug-in **>         
+        CategoryID categoryId 
+        <** @description : enum(INVALID,STRING,INTEGER,COORDINATES ...).**>
+        AttributeType type
+        <** @description : value or partial value. The value depends on the attribute specifications and type.**>
+        AttributeValue value
+        <** @description : enum(INVALID,MORE_THAN,LESS_THAN,EQUAL, ....).**>
+        OperatorType oper
+        <** @description : true if the attribute is mandatory for the search and false for optional.**>
+        Boolean mandatory
+    }
+
+  	<** @description: Detailed descripton of a category**>			
+    struct CategoryDetails
+    {
+ 		<**	@description : Category unique id.**>
+        CategoryID uniqueId
+ 		<**	@description : list of parent categories unique id.**>
+        CategoryID[] parentsId
+ 		<**	@description : visual icons set.**>
+        Icon icons
+ 		<**	@description : name.**>
+        String name
+ 		<**	@description : true if the category is a pre-defined one (top level), false for customized categories created by plug-in.**>
+        Boolean topLevel
+ 		<**	@description : short category description (optional).**>
+        String description
+ 		<**	@description : media associated (html web site, audio, video, ...) (optional).**>
+        Media media
+    }
+
+ 	<** @description: Detailed description of a category including attributes and sort options**>			
+    struct Category
+    {
+		<**	@description : struct(unique_id, list of parents_id, icons, name, top_level, short_desc, media).**>
+        CategoryDetails details
+		<**	@description : array[struct(name, type, array[struct(operator_id, operator_name)].**>
+        CategoryAttribute[] attributeList
+ 		<**	@description : array[struct(id, name)].**>
+        CategorySortOption[] sortOptions
+    }
+
+	<** @description: Pair of catgory and description of level**>			
+    struct CategoryAndLevel
+    {
+ 		<**	@description : Category unique id.**>
+        CategoryID uniqueId
+ 		<**	@description : true if the category is a pre-defined one (top level), false for customized categories created by plug-in.**>
+        Boolean topLevel
+    }
+
+	<** @description: pair of category and name **>			
+    struct CategoryAndName
+    {
+ 		<**	@description : Category unique id.**>
+        CategoryID uniqueId
+ 		<**	@description : name.**>
+        String name
+ 		<**	@description : true if the category is a pre-defined one (top level), false for customized categories created by plug-in.**>
+        Boolean topLevel
+    }
+    
+	<** @description: pair of category and reson for update**>			
+	struct CategoryAndReason
+	{
+ 		<**	@description : Category unique id.**>
+        CategoryID unique_id
+        <** @description : enum(ADDED,REMOVED,ATTR_ADDED,ATTR_MODIFIED,ATTR_REMOVED, ... ) .**>
+    	UpdateReason reason
+	}
+	<** @description: pair of category and the this category is available**>			
+	struct CategoryAndStatus
+	{
+ 		<**	@description : Category unique id.**>
+        CategoryID uniqueId
+        <** @description : true if the category is available .**>
+    	Boolean status
+	}
+
+ 	<** @description:**>			
+    struct PoiAddedDetails
+    {
+		<** @description:POI name**>			
+        String name
+        <** @description:POI location.**>           
+        Coordinate3D location
+   		<** @description: array[struct(id,type,value)].**>			
+        PoiAttribute[] attributeList
+    }
+}
