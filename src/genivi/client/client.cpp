@@ -20,7 +20,8 @@
 #include <iostream>
 #include <signal.h>
 #include <stdio.h>
-#include "navicore-session.h"
+#include "navicore.h"
+#include "mapviewer.h"
 
 DBus::BusDispatcher dispatcher;
 
@@ -28,10 +29,20 @@ int main()
 {
     DBus::default_dispatcher = &dispatcher;
     DBus::Connection conn = DBus::Connection::SessionBus();
-    NavicoreSession nc_Session(conn, "/org/genivi/navicore_session", "org.agl.gpsnavi");
+    Navicore navicore(conn, "/org/genivi/navicore", "org.agl.gpsnavi");
+    MapViewer mapviewer(conn, "/org/genivi/mapviewer", "org.agl.gpsnavi");
 
-    printf("CreateSession() --> %d\n", nc_Session.CreateSession(std::string("Test1")) );
-    printf("CreateSession() --> %d\n", nc_Session.CreateSession(std::string("Test2")) );
+    ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > version;
+
+    version = navicore.GuidanceGetVersion();
+    std::cout << "Navicore  : " << version._4 << " : " << version._3 << "." << version._2 << "." << version._1 << std::endl;
+    
+    version = mapviewer.MapViewerControlGetVersion();
+    std::cout << "Mapviewer : " << version._4 << " : " << version._3 << "." << version._2 << "." << version._1 << std::endl;
+
+    std::cout << "CreateSession() -->" << navicore.CreateSession(std::string("Test1")) << std::endl;
+    std::cout << "CreateSession() -->" << navicore.CreateSession(std::string("Test2")) << std::endl;
+
 /*
     try
     {
