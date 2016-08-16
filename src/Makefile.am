@@ -559,7 +559,8 @@ libnavicore_la_LIBADD = \
         @SQLITE3_LIBS@ \
         @EXPAT_LIBS@
 
-bin_PROGRAMS        = navi
+bin_PROGRAMS        = navi navi_genivi
+
 navi_SOURCES = \
 sms/sms-core/include/navicore.h \
 sms/sms-core/include/navicoredefex.h \
@@ -577,6 +578,43 @@ main/guide.c \
 main/route.c \
 main/png.cpp \
 main/button.c \
+main/HMI_Icon.c \
+main/font.cpp \
+main/image.c \
+glview/glview_local.h \
+glview/glview.h \
+yspng/yspng.h \
+pthread/pthread_timer.h \
+main/png.h \
+main/font.h \
+main/navi.h \
+main/HMI_Icon.h \
+main/image.h \
+LICENSE \
+COPYING
+
+navi_genivi_SOURCES = \
+sms/sms-core/include/navicore.h \
+sms/sms-core/include/navicoredefex.h \
+sms/sms-core/include/navicoredef.h \
+sms/sms-core/SMCoreMP/es1emu/MP_Es1Emulation.h \
+sms/sms-core/SMCoreMP/MP_Def.h \
+sms/sms-core/SMCoreMP/MP_GL.h \
+sms/sms-core/SMUtil/pthread_msq.h \
+genivi/main/navi_genivi.h \
+genivi/main/navicore.h \
+genivi/main/mapviewer.h \
+glview/glview.c \
+glview/glview_wayland.c \
+yspng/yspng.cpp \
+pthread/pthread_timer.c \
+genivi/main/main.cpp \
+genivi/main/server.cpp \
+genivi/main/route.cpp \
+genivi/main/guide.cpp \
+genivi/main/genivi-navicore.cpp \
+genivi/main/genivi-mapviewer.cpp \
+main/png.cpp \
 main/HMI_Icon.c \
 main/font.cpp \
 main/image.c \
@@ -634,6 +672,52 @@ navi_LDADD = \
         @EXPAT_LIBS@ \
         @OPENSSL_LIBS@
 
+navi_genivi_CPPFLAGS = -std=c++11 \
+        -I$(top_srcdir)/src/sms \
+        -I$(top_srcdir)/src/sms/lib/include \
+        -I$(top_srcdir)/src/sms/locator/include \
+        -I$(top_srcdir)/src/sms/sms-core \
+        -I$(top_srcdir)/src/sms/sms-core/include \
+        -I$(top_srcdir)/src/sms/sms-core/SMUtil \
+        -I$(top_srcdir)/src/glview \
+        -I$(top_srcdir)/src/yspng \
+        -I$(top_srcdir)/src/main \
+        -I$(top_srcdir)/src/pthread
+
+navi_genivi_CFLAGS = -fPIC \
+        @GLIB_CFLAGS@ \
+        @FREETYPE2_CFLAGS@ \
+        @WAYLAND_CFLAGS@ \
+        @GL_CFLAGS@ \
+        @ZLIB_CFLAGS@ \
+        @SQLITE3_CFLAGS@ \
+        @EXPAT_CFLAGS@ \
+        @OPENSSL_CFLAGS@ \
+        @DBUSCXX_CFLAGS@
+
+navi_genivi_CXXFLAGS = -fPIC -std=c++11 \
+        @GLIB_CFLAGS@ \
+        @FREETYPE2_CFLAGS@ \
+        @WAYLAND_CFLAGS@ \
+        @GL_CFLAGS@ \
+        @ZLIB_CFLAGS@ \
+        @SQLITE3_CFLAGS@ \
+        @EXPAT_CFLAGS@ \
+        @OPENSSL_CFLAGS@ \
+        @DBUSCXX_CFLAGS@
+
+navi_genivi_LDADD = \
+	libnavicore.la \
+        @GLIB_LIBS@ \
+        @FREETYPE2_LIBS@ \
+        @WAYLAND_LIBS@ \
+        @GL_LIBS@ \
+        @ZLIB_LIBS@ \
+        @SQLITE3_LIBS@ \
+        @EXPAT_LIBS@ \
+        @OPENSSL_LIBS@ \
+        @DBUSCXX_LIBS@
+
 #
 
 naviincludedir = $(includedir)/NC
@@ -646,6 +730,13 @@ sms/sms-core/SMCoreMP/MP_Def.h \
 sms/sms-core/SMCoreMP/MP_GL.h \
 sms/sms-core/SMUtil/pthread_msq.h
 
-
-
-
+#navi_geniviincludedir = $(includedir)/NC
+#navi_geniviinclude_HEADERS =	\
+#sms/sms-core/include/navicore.h \
+#sms/sms-core/include/NavicoreGenivi.hpp \
+#sms/sms-core/include/navicoredefex.h \
+#sms/sms-core/include/navicoredef.h \
+#sms/sms-core/SMCoreMP/es1emu/MP_Es1Emulation.h \
+#sms/sms-core/SMCoreMP/MP_Def.h \
+#sms/sms-core/SMCoreMP/MP_GL.h \
+#sms/sms-core/SMUtil/pthread_msq.h

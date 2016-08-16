@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <signal.h>
-#include "navicore.h"
-#include "mapviewer.h"
+#include "genivi-navicore.h"
+#include "genivi-mapviewer.h"
+#include "NaviTrace.h"
 
 DBus::BusDispatcher dispatcher;
 
@@ -10,8 +11,10 @@ void leave_signal_handler(int sig)
     dispatcher.leave();
 }
 
-int main(int argc, char *argv[])
+static void *dbusServerThread(void *no_arg)
 {
+    (void) no_arg;
+
     signal(SIGTERM, leave_signal_handler);
     signal(SIGINT, leave_signal_handler);
 
@@ -23,4 +26,22 @@ int main(int argc, char *argv[])
     Mapviewer mapViewer(conn);
 
     dispatcher.enter();
+}
+
+int createDbusServerThread(void)
+{
+    pthread_t p;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    int ret = pthread_create(&p, &attr, dbusServerThread, NULL);
+    if (ret != 0)
+        TRACE_ERROR("pthread_create for dbusServerThread failed (err: %s)",
+            ret == EAGAIN ? "EAGAIN" :
+            ret == EINVAL ? "EINVAL" :
+            ret == EPERM   ? "EPERM" : "UNKNOWN");
+    pthread_attr_destroy(&attr);
+
+    return ret;
 }
