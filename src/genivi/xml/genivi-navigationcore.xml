@@ -921,4 +921,752 @@
       </arg>
     </method>
   </interface>
+  <interface name="org.genivi.navigationcore.MapMatchedPosition">
+    <version>3.0.0 (21-01-2014)</version>
+    <doc>
+      <line>MapMatchedPosition = This interface offers functions to retrieve the map matched position and to simulate positioning</line>
+	  <line></line>
+	  <line>If NavigationCore is not in Simulation Mode (Simulation Status is SIMULATION_STATUS_NO_SIMULATION), it is using the EnhancedPosition from the Positioning component.</line>
+	  <line>In Simulation Mode it is not using this position, instead it uses FixedPosition or FollowActiveRoute to determine the position.</line>
+	  <line>With FixedPosition (Simulation Status is SIMULATION_STATUS_FIXED_POSITION), the position is fixed, unless it is changed by a call to setPosition().</line>
+	  <line>This supports use cases like: setting the current car position in a demo mode, or replay a position log file (where setPosition() is called for each logged location).</line>
+	  <line>In Follow Active Route mode, NavigationCore is generating positions itself.</line>
+	  <line>These positions follow the current active route. When the end of the route is reached, the position jumps back to the starting point of the route.</line>
+	  <line>There are two sub states: Running (Simulation Status is SIMULATION_STATUS_RUNNING) and Paused (Simulation Status is SIMULATION_STATUS_PAUSED).</line>
+	  <line>By default the ‘driving speed’ will be equal to the free flow speed of each road segment. However a speed factor can be set via the method SetSimulationSpeed.</line>
+    </doc>
+    <method name="GetVersion">
+      <doc>
+        <line>GetVersion = This method returns the API version implemented by the server application</line>
+      </doc>
+      <arg name="version" type="(qqqs)" direction="out">
+        <doc>
+          <line>version = struct(major,minor,micro,date)</line>
+          <line>major = when the major changes, then backward compatibility with previous releases is not granted</line>
+          <line>minor = when the minor changes, then backward compatibility with previous releases is granted, but something changed in the implementation of the API (e.g. new methods may have been added)</line>
+          <line>micro = when the micro changes, then backward compatibility with previous releases is granted (bug fixes or documentation modifications)</line>
+          <line>date = release date (e.g. 21-06-2011)</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="SetSimulationMode">
+      <doc>
+        <line>SetSimulationMode = This method activates or deactivates the simulation mode</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <arg name="activate" type="b" direction="in">
+        <doc>
+          <line>activate = flag. TRUE means that the simulation mode is activated.</line>
+		  <line>The simulation status will be SIMULATION_STATUS_FIXED_POSITION, with the position being the last known position in the NavigationCore.</line>
+		  <line>FALSE means that the simulation mode is de-activated. The simulation status will be SIMULATION_STATUS_NO_SIMULATION</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="GetSimulationStatus">
+      <doc>
+        <line>GetSimulationStatus = This method retrieves the simulation status</line>
+      </doc>
+      <arg name="simulationStatus" type="i" direction="out">
+        <doc>
+          <line>simulationStatus = enum(SIMULATION_STATUS_NO_SIMULATION, SIMULATION_STATUS_RUNNING, SIMULATION_STATUS_PAUSED, SIMULATION_STATUS_FIXED_POSITION)</line>
+          <line>SIMULATION_STATUS_NO_SIMULATION means that NavigationCore is using the EnhancedPosition</line>
+          <line>SIMULATION_STATUS_RUNNING means that positions are generated along the active route</line>
+          <line>SIMULATION_STATUS_PAUSED means that the generation of positions along the active route is paused</line>
+          <line>SIMULATION_STATUS_FIXED_POSITION means that the position is fixed.</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="AddSimulationStatusListener">
+      <doc>
+        <line> AddSimulationStatusListener = Add this node as a listener to Simulation Status changes.</line>
+		<line>Upon changes a SimulationStatusChanged signal will be received. NavigationCore will only send out a SimulationStatusChanged signal if there is at least one node listening to these changes.</line>
+      </doc>
+    </method>
+    <method name="RemoveSimulationStatusListener">
+      <doc>
+        <line> RemoveSimulationStatusListener = Remove this node as a listener to Simulation Status changes.</line>
+      </doc>
+    </method>
+    <signal name="SimulationStatusChanged">
+      <doc>
+        <line>SimulationStatusChanged = This signal is emitted when the Simulation Status has changed</line>
+      </doc>
+      <arg name="simulationStatus" type="i">
+        <doc>
+          <line>simulationStatus = enum(SIMULATION_STATUS_NO_SIMULATION, SIMULATION_STATUS_RUNNING, SIMULATION_STATUS_PAUSED, SIMULATION_STATUS_FIXED_POSITION)</line>
+          <line>SIMULATION_STATUS_NO_SIMULATION means that NavigationCore is using the EnhancedPosition</line>
+          <line>SIMULATION_STATUS_RUNNING means that positions are generated along the active route</line>
+          <line>SIMULATION_STATUS_PAUSED means that the generation of positions along the active route is paused</line>
+          <line>SIMULATION_STATUS_FIXED_POSITION means that the position is fixed.</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="SetSimulationSpeed">
+      <doc>
+        <line>SetSimulationSpeed = This method sets the speed factor for the simulation mode</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <arg name="speedFactor" type="y" direction="in">
+        <doc>
+          <line>speedFactor = speed factor</line>
+          <line>unit is x0.25. Normal speed x1 is 4</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="GetSimulationSpeed">
+      <doc>
+        <line>GetSimulationSpeed = returns the speed factor for the simulation mode</line>
+      </doc>
+      <arg name="speedFactor" type="y" direction="out">
+        <doc>
+          <line>speedFactor = speed factor</line>
+          <line>unit is x0.25. Normal speed x1 is 4</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="AddSimulationSpeedListener">
+      <doc>
+        <line> AddSimulationSpeedListener = Add this node as a listener to simulation speed factor changes.</line>
+		<line>Upon changes a SimulationSpeedChanged signal will be received.</line>
+		<line>NavigationCore will only send out a SimulationSpeedChanged signal if there is at least one node listening to these changes</line>
+      </doc>
+    </method>
+    <method name="RemoveSimulationSpeedListener">
+      <doc>
+        <line> RemoveSimulationSpeedListener = Remove this node as a listener to simulation speed factor changes.</line>
+      </doc>
+    </method>
+    <signal name="SimulationSpeedChanged">
+      <doc>
+        <line>SimulationSpeedChanged = This signal is emitted when the simulation speed factor has changed</line>
+		<line>NavigationCore will only send out a SimulationSpeedChanged signal if there is at least one node listening to these changes</line>
+      </doc>
+      <arg name="speedFactor" type="y">
+        <doc>
+          <line>speedFactor = speed factor</line>
+          <line>unit is x0.25. Normal speed x1 is 4</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="StartSimulation">
+      <doc>
+        <line>StartSimulation = This method starts, or resumes, a Follow Active Route simulation</line>
+        <line>If the current Simulation Status is SIMULATION_STATUS_PAUSED, the simulation is resumed from the current location.</line>
+		<line>Otherwise the simulation is started from the starting point of the route. In both cases the new status will be SIMULATION_STATUS_RUNNING</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="PauseSimulation">
+      <doc>
+        <line>PauseSimulation = This method freezes the current location</line>
+		<line>The new status will be SIMULATION_STATUS_PAUSED</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="GetPosition">
+      <doc>
+        <line>GetPosition = This method returns the current position</line>
+      </doc>
+      <arg name="valuesToReturn" type="ai" direction="in">
+        <doc>
+          <line>valuesToReturn= array[key]</line>
+          <line>key = enum(INVALID,TIMESTAMP,LATITUDE,LONGITUDE,ALTITUDE,HEADING,SPEED,CLIMB,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... ,ALL)</line>
+        </doc>
+      </arg>
+      <arg name="position" type="a{i(yv)}" direction="out">
+        <doc>
+          <line>position = dictionary[key,value]</line>
+          <line>dictionary = array of tuples (key,value)</line>
+          <line>key = enum(INVALID,TIMESTAMP,LATITUDE,LONGITUDE,ALTITUDE,HEADING,SPEED,CLIMB,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... )</line>
+          <line>key = TIMESTAMP, value = value of type 't', that represents a timestamp in ms</line>
+          <line>key = LATITUDE, value = value of type 'd', that expresses the latitude of the current position in format %3.6f. Range [-90,+90]. Example: 48.053250</line>
+          <line>key = LONGITUDE, value = value of type 'd', that expresses the longitude of the current position in format %3.6f. Range [-180,+180]. Example: 8.324500</line>
+          <line>key = ALTITUDE, value = value of type 'i', that expresses the altitude above the sea level of the current position in meters</line>
+          <line>key = HEADING, value = value of type 'u', that expresses the course angle in degree (0 = north, 90 = east, 180 = south, 270 = west, no negative values)</line>
+          <line>key = SPEED, value = value of type 'd', that expresses speed measured in m/s. A negative value indicates that the vehicle is moving backwards</line>
+          <line>key = CLIMB, value = value of type 'i', that expresses the inclination measured in degrees</line>
+          <line>key = GNSS_FIX_STATUS, value = value of type 'q', that represents an enum(INVALID,NO_FIX,TIME_FIX,2D_FIX,3D_FIX, ... )</line>
+          <line>key = DR_STATUS, value = value of type 'b', where TRUE means that a dead-reckoning algorithm has been used to calculate the current position</line>
+          <line>key = MM_STATUS, value = value of type 'b', where TRUE means that a map-matching algorithm has been used to calculate the current position</line>
+          <line>key = SIMULATION_MODE, value = value of type 'b', where TRUE means that the current position is simulated</line>
+        </doc>
+      </arg>
+      <error name="org.genivi.navigationcore.MapMatchedPosition.Error.NoPosition">
+        <doc>
+          <line>This error is generated if no position is available</line>
+        </doc>
+      </error>
+    </method>
+    <method name="SetPosition">
+      <doc>
+        <line>SetPosition = This method sets the position to a specific location</line>
+        <line>Independent of the current Simulation Status, the new status will be SIMULATION_STATUS_FIXED_POSITION.</line>
+        <line>This method can be used to replay a position log file (with positions obtained via calls to GetPosition()) by calling this method for each position in the log file.</line>
+        <line>It is of course also possible to call this method just once with e.g. a 'current location' entered by the user (via the HMI).</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <arg name="position" type="a{i(yv)}" direction="in">
+        <doc>
+          <line>position = dictionary[key,value]</line>
+          <line>dictionary = array of tuples (key,value)</line>
+          <line>key = enum(INVALID,TIMESTAMP,LATITUDE,LONGITUDE,ALTITUDE,HEADING,SPEED,CLIMB,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS, ... )</line>
+          <line>key = TIMESTAMP, value = value of type 't', that represents a timestamp in ms</line>
+          <line>key = LATITUDE, value = value of type 'd', that expresses the latitude of the current position in format %3.6f. Range [-90,+90]. Example: 48.053250</line>
+          <line>key = LONGITUDE, value = value of type 'd', that expresses the longitude of the current position in format %3.6f. Range [-180,+180]. Example: 8.324500</line>
+          <line>key = ALTITUDE, value = value of type 'i', that expresses the altitude above the sea level of the current position in meters</line>
+          <line>key = HEADING, value = value of type 'u', that expresses the course angle in degree (0 = north, 90 = east, 180 = south, 270 = west, no negative values)</line>
+          <line>key = SPEED, value = value of type 'd', that expresses speed measured in m/s. A negative value indicates that the vehicle is moving backwards</line>
+          <line>key = CLIMB, value = value of type 'i', that expresses the inclination measured in degrees</line>
+          <line>key = GNSS_FIX_STATUS, value = value of type 'q', that represents an enum(INVALID,NO_FIX,TIME_FIX,2D_FIX,3D_FIX, ... )</line>
+          <line>key = DR_STATUS, value = value of type 'b', where TRUE means that a dead-reckoning algorithm has been used to calculate the current position</line>
+          <line>key = MM_STATUS, value = value of type 'b', where TRUE means that a map-matching algorithm has been used to calculate the current position</line>
+          <line>Note that the key SIMULATION_MODE is not allowed here, as it will be true by definition.</line>
+        </doc>
+      </arg>
+    </method>
+    <signal name="PositionUpdate">
+      <doc>
+        <line>PositionUpdate = This signal is called to notify a client application of a position change. The update frequency is implementation specific. The maximal allowed frequency is 10Hz</line>
+      </doc>
+      <arg name="changedValues" type="ai">
+        <doc>
+          <line>changedValues = array[value]</line>
+          <line>value = enum(INVALID,TIMESTAMP,LATITUDE,LONGITUDE,ALTITUDE,HEADING,SPEED,CLIMB,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... )</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="GetAddress">
+      <doc>
+        <line>GetAddress = This method returns the current address</line>
+      </doc>
+      <arg name="valuesToReturn" type="ai" direction="in">
+        <doc>
+          <line>valuesToReturn= array[fieldType]</line>
+          <line>key = enum(INVALID,TIMESTAMP,COUNTRY,COUNTRYCODE,CITY,STREET,ROAD_NUMBER,HOUSENUMBER,HOUSENAME,CROSSING,DISTRICT,TIMEZONE_OFFSET,DAYLIGHT_OFFSET,MATCH_TYPE, ... ,ALL)</line>
+        </doc>
+      </arg>
+      <arg name="address" type="a{i(yv)}" direction="out">
+        <doc>
+          <line>address = dictionary[key,value]</line>
+          <line>dictionary = array of tuples (key,value)</line>
+          <line>key = enum(INVALID,TIMESTAMP,COUNTRY,COUNTRYCODE,CITY,STREET,ROAD_NUMBER,HOUSENUMBER,HOUSENAME,CROSSING,DISTRICT,TIMEZONE_OFFSET,DAYLIGHT_OFFSET,MATCH_TYPE, ... )</line>
+          <line>key = TIMESTAMP, value = value of type 't', that represents a timestamp in ms</line>
+          <line>key = COUNTRY, value = value of type 's', that identifies the country name</line>
+          <line>key = COUNTRYCODE, value = value of type 's', ISO 3166‐1 alpha 3 country code (upper case)</line>
+          <line>key = CITY, value = value of type 's', that identifies the city name</line>
+          <line>key = STREET, value = value of type 's', that identifies the street name</line>
+          <line>key = ROAD_NUMBER, value = value of type ´s´, that identifies the road number</line>
+          <line>key = HOUSENUMBER, value = value of type 's', that identifies the house number</line>
+          <line>key = HOUSENAME, value = value of type ´s´, that identifies the house name</line>
+          <line>key = CROSSING, value = value of type 's', that identifies the crossing</line>
+          <line>key = DISTRICT, value = value of type 's', that identifies the district name</line>
+          <line>key = TIMEZONE_OFFSET, value = value of type 'n', that identifies the timezone offset at the current address</line>
+          <line>key = DAYLIGHT_OFFSET, value = value of type 'n', that identifies the daylight offset at the current address</line>
+          <line>key = MATCH_TYPE, value = value of type 'q', that identifies an enum(INVALID,ON_ROAD,OFF_ROAD,ON_FERRY,IN_TUNNEL,ON_CARPARK, ... )</line>
+        </doc>
+      </arg>
+      <error name="org.genivi.navigationcore.MapMatchedPosition.Error.NoMap">
+        <doc>
+          <line>This error is generated if no map is available</line>
+        </doc>
+      </error>
+      <error name="org.genivi.navigationcore.MapMatchedPosition.Error.OutOfKnownMap">
+        <doc>
+          <line>This error is generated if the vehicle is located in a position outside of the known map</line>
+        </doc>
+      </error>
+    </method>
+    <signal name="AddressUpdate">
+      <doc>
+        <line>AddressUpdate = This signal is called to notify a client application that the current address changed</line>
+      </doc>
+      <arg name="changedValues" type="ai">
+        <doc>
+          <line>changedValues = array[value]</line>
+          <line>value = enum(INVALID,TIMESTAMP,COUNTRY,COUNTRYCODE,CITY,STREET,ROAD_NUMBER,HOUSENUMBER,HOUSENAME,CROSSING,DISTRICT,TIMEZONE_OFFSET,DAYLIGHT_OFFSET,MATCH_TYPE, ... )</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="GetPositionOnSegment">
+      <doc>
+        <line>positionOnSegment = This method returns the vehicle position on a route segment</line>
+      </doc>
+      <arg name="valuesToReturn" type="ai" direction="in">
+        <doc>
+          <line>valuesToReturn= array[fieldType]</line>
+          <line>key = enum(INVALID,TIMESTAMP,SEGMENT_ID,DIRECTION_ON_SEGMENT,DISTANCE_ON_SEGMENT, ... ,ALL)</line>
+        </doc>
+      </arg>
+      <arg name="positionOnSegment" type="a{i(yv)}" direction="out">
+        <doc>
+          <line>positionOnSegment = dictionary[key,value]</line>
+          <line>dictionary = array of tuples (key,value)</line>
+          <line>key = enum(INVALID,TIMESTAMP,SEGMENT_ID,DIRECTION_ON_SEGMENT,DISTANCE_ON_SEGMENT, ... )</line>
+          <line>key = TIMESTAMP, value = value of type 't', that represents a timestamp in ms</line>
+          <line>key = SEGMENT_ID, value = value = value of type 'ay', that represents a link-ID in a format whose interpretation is left to the navigationcore</line>
+          <line>key = DIRECTION_ON_SEGMENT, value = value of type 'b', where TRUE means forward and FALSE means backward</line>
+          <line>key = DISTANCE_ON_SEGMENT, value = value of type 'd', that indicates the distance in meter on the segment</line>
+        </doc>
+      </arg>
+    </method>
+    <signal name="PositionOnSegmentUpdate">
+      <doc>
+        <line>PositionOnSegmentUpdate = This signal is called to notify the client that the vehicle position on the route segment changed</line>
+      </doc>
+      <arg name="changedValues" type="ai">
+        <doc>
+          <line>changedValues = array[value]</line>
+          <line>value = enum(INVALID,TIMESTAMP,SEGMENT_ID,DIRECTION_ON_SEGMENT,DISTANCE_ON_SEGMENT, ... )</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="GetStatus">
+      <doc>
+        <line>GetStatus = This method returns the current status</line>
+      </doc>
+      <arg name="valuesToReturn" type="ai" direction="in">
+        <doc>
+          <line>valuesToReturn = array[fieldType]</line>
+          <line>key = enum(INVALID,TIMESTAMP,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... ,ALL)</line>
+        </doc>
+      </arg>
+      <arg name="status" type="a{i(yv)}" direction="out">
+        <doc>
+          <line>status = dictionary[key,value]</line>
+          <line>dictionary = array of tuples (key,value)</line>
+          <line>key = enum(INVALID,TIMESTAMP,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... )</line>
+          <line>key = TIMESTAMP, value = value of type 't', that represents a timestamp in ms</line>
+          <line>key = GNSS_FIX_STATUS, value = value of type 'q', that represents an enum(INVALID,NO_FIX,TIME_FIX,2D_FIX,3D_FIX, ... )</line>
+          <line>key = DR_STATUS, value = value of type 'b', where TRUE means that a dead-reckoning algorithm has been used to calculate the current position</line>
+          <line>key = MM_STATUS, value = value of type 'b', where TRUE means that a map-matching algorithm has been used to calculate the current position</line>
+          <line>key = SIMULATION_MODE, value = value of type 'b', where TRUE means that the current position is simulated</line>
+        </doc>
+      </arg>
+    </method>
+    <signal name="StatusUpdate">
+      <doc>
+        <line>StatusUpdate = This signal is emitted to notifiy a client application that the current status changed</line>
+      </doc>
+      <arg name="changedValues" type="ai">
+        <doc>
+          <line>changedValues = array[value]</line>
+          <line>value = enum(INVALID,TIMESTAMP,GNSS_FIX_STATUS,DR_STATUS,MM_STATUS,SIMULATION_MODE, ... )</line>
+        </doc>
+      </arg>
+    </signal>
+    <signal name="OffRoadPositionChanged">
+      <doc>
+        <line>OffroadPositionChanged = This signal is emitted when the heading and the distance to the closest point on the road network changes</line>
+      </doc>
+      <arg name="distance" type="u">
+        <doc>
+          <line>distance = distance in meters to the closest point on the road network</line>
+        </doc>
+      </arg>
+      <arg name="direction" type="i">
+        <doc>
+          <line>direction = direction in degrees relatively to the closest point on the road network. Range [0:360]</line>
+        </doc>
+      </arg>
+    </signal>
+  </interface>
+  <interface name="org.genivi.navigationcore.Guidance">
+    <version>3.1.0 (03-03-2014)</version>
+    <doc>
+      <line>Guidance = This interface offers functions that implement the route-guidance functionality of a navigation system</line>
+    </doc>
+    <method name="GetVersion">
+      <doc>
+        <line>GetVersion = This method returns the API version implemented by the server application</line>
+      </doc>
+      <arg name="version" type="(qqqs)" direction="out">
+        <doc>
+          <line>version = struct(major,minor,micro,date)</line>
+          <line>major = when the major changes, then backward compatibility with previous releases is not granted</line>
+          <line>minor = when the minor changes, then backward compatibility with previous releases is granted, but something changed in the implementation of the API (e.g. new methods may have been added)</line>
+          <line>micro = when the micro changes, then backward compatibility with previous releases is granted (bug fixes or documentation modifications)</line>
+          <line>date = release date (e.g. 21-06-2011)</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="StartGuidance">
+      <doc>
+        <line>StartGuidance = This method starts the guidance for a given route</line>
+		<line>The guidanceStatus will change to ACTIVE</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <arg name="routeHandle" type="u" direction="in">
+        <doc>
+          <line>routeHandle = Route handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="StopGuidance">
+      <doc>
+        <line>StopGuidance = This method stops the guidance</line>
+		<line>The guidanceStatus will change to INACTIVE</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="SetVoiceGuidance">
+      <doc>
+        <line>SetVoiceGuidance = This method switch on/off the voice guidance</line>
+      </doc>
+      <arg name="activate" type="b" direction="in">
+        <doc>
+          <line>activation of the voice guidance</line>
+        </doc>
+      </arg>
+      <arg name="voice" type="s" direction="in">
+        <doc>
+          <line>kind of voice (to be defined)</line>
+        </doc>
+      </arg>
+      <error name="org.genivi.navigationcore.Guidance.Error.VoiceNotAllowed">
+        <doc>
+          <line>This error is generated if the voice generation is inactive </line>
+        </doc>
+      </error>
+    </method>
+    <method name="GetGuidanceDetails">
+      <doc>
+        <line>GetGuidanceDetails = This method retrieves guidance information </line>
+      </doc>
+      <arg name="voiceGuidance" type="b" direction="out">
+        <doc>
+          <line>voiceGuidance = if TRUE voice guidance is active</line>
+        </doc>
+      </arg>
+      <arg name="vehicleOnTheRoad" type="b" direction="out">
+        <doc>
+          <line>vehicleOnTheRoad = if TRUE the vehicle is located on the road network</line>
+        </doc>
+      </arg>
+      <arg name="isDestinationReached" type="b" direction="out">
+        <doc>
+          <line>isDestinationReached = if TRUE the destination has been reached</line>
+        </doc>
+      </arg>
+      <arg name="maneuver" type="i" direction="out">
+        <doc>
+          <line>maneuver = enum(INVALID,CRUISE,MANEUVER_APPEARED,PRE_ADVICE,ADVICE,PASSED, ... )</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="PlayVoiceManeuver">
+      <doc>
+        <line>PlayVoiceManeuver = This method plays or repeats the last voice guidance</line>
+      </doc>
+      <error name="org.genivi.navigationcore.Guidance.Error.VoiceNotAllowed">
+        <doc>
+          <line>This error is generated if the voice generation is inactive </line>
+        </doc>
+      </error>
+    </method>
+    <method name="GetWaypointInformation">
+      <doc>
+        <line>GetWaypointInformation = This method retrieves the information on the remaining way points of the route. A point can be the final destination as well as a stage defined by the user. The returned waypoints are ordered by their 'number'.</line>
+      </doc>
+      <arg name="requestedNumberOfWaypoints" type="q" direction="in">
+        <doc>
+          <line>requestedNumberOfWaypoints = the number of requested waypoints. If 0, all waypoints will be returned.</line>
+        </doc>
+      </arg>
+      <arg name="numberOfWaypoints" type="q" direction="out">
+        <doc>
+          <line>numberOfWaypoints = the number of retrieved waypoints(NOTE: the number corresponds to the number of elements in the array)</line>
+        </doc>
+      </arg>
+      <arg name="waypointsList" type="a(uuiinnbq)" direction="out">
+        <doc>
+          <line>array[struct(waypointOffset,travelTime,direction,side,timeZone,daylightSavingTime,isDestination,number)]</line>
+          <line>waypointOffset = the offset of the way point in meters from the beginning of the route</line>
+          <line>travelTime = time to reach the way point in seconds</line>
+          <line>direction = direction of the way point in degree relatively to the North. Range [0:360]</line>
+          <line>side = enum(LEFT,RIGHT,NOT_AVAILABLE)</line>
+          <line>timeZone = time zone of the way point. It is expressed as the time difference from the UTC in minutes</line>
+          <line>daylightSavingTime = daylight saving time of the way point. It is expressed as the time difference from the UTC in minutes</line>
+          <line>isDestination = if TRUE the way point is the destination</line>
+          <line>number = number of the next waypoint (related to the waypoint list, first way point index is 0)</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="GetDestinationInformation">
+      <doc>
+        <line>This method retrieves the information on the final destination</line>
+      </doc>
+      <arg name="offset" type="u" direction="out">
+        <doc>
+          <line>offset = offset of the destination in meter from the beginning of the route</line>
+        </doc>
+      </arg>
+      <arg name="travelTime" type="u" direction="out">
+        <doc>
+          <line>travelTime = time to reach the destination in second</line>
+        </doc>
+      </arg>
+      <arg name="direction" type="i" direction="out">
+        <doc>
+          <line>direction = direction of the destination in degree relatively to the North. Range [0:360]</line>
+        </doc>
+      </arg>
+      <arg name="side" type="i" direction="out">
+        <doc>
+          <line>side = enum(LEFT,RIGHT,NOT_AVAILABLE)</line>
+        </doc>
+      </arg>
+      <arg name="timeZone" type="n" direction="out">
+        <doc>
+          <line>timeZone = time zone of the destination. It is expressed as the time difference from the UTC in minutes</line>
+        </doc>
+      </arg>
+      <arg name="daylightSavingTime" type="n" direction="out">
+        <doc>
+          <line>daylightSavingTime = daylight saving time of the destination. It is expressed as the time difference from the UTC in minutes</line>
+        </doc>
+      </arg>
+    </method>
+    <signal name="VehicleLeftTheRoadNetwork">
+      <doc>
+        <line>VehicleLeftTheRoadNetwork = This signal is emitted when the vehicle exits from the road network</line>
+      </doc>
+    </signal>
+    <signal name="GuidanceStatusChanged">
+      <doc>
+        <line>GuidanceStatusChanged = This signal is emitted when the guidance status changes</line>
+      </doc>
+      <arg name="guidanceStatus" type="i">
+        <doc>
+          <line>guidanceStatus = enum(INVALID,ACTIVE,INACTIVE)</line>
+          <line>ACTIVE means that NavigationCore is providing guidance information</line>
+          <line>INACTIVE means that NavigationCore is not providing guidance information</line>
+        </doc>
+      </arg>
+      <arg name="routeHandle" type="u">
+        <doc>
+          <line>routeHandle = Active route handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value. Should be ignored when guidanceStatus=INACTIVE.</line>
+        </doc>
+      </arg>
+    </signal>
+    <signal name="WaypointReached">
+      <doc>
+        <line>WaypointReached = This signal is emitted when the destination is reached</line>
+      </doc>
+      <arg name="isDestination" type="b">
+        <doc>
+          <line>isDestination = flag. TRUE means that the way point is the destination</line>
+        </doc>
+      </arg>
+    </signal>
+    <signal name="ManeuverChanged">
+      <doc>
+        <line>This signal is emitted each time a maneuver event is going</line>
+      </doc>
+      <arg name="maneuver" type="i">
+        <doc>
+          <line>maneuver = enum(INVALID,CRUISE,MANEUVER_APPEARED,PRE_ADVICE,ADVICE,PASSED, ... )</line>
+        </doc>
+      </arg>
+    </signal>
+    <signal name="PositionOnRouteChanged">
+      <doc>
+        <line>PositionOnRouteChanged = This signal is emitted when the position on the route changes</line>
+      </doc>
+      <arg name="offsetOnRoute" type="u">
+        <doc>
+          <line>offsetOnRoute = the current offset on the route in meters from the beginning of the route</line>
+        </doc>
+      </arg>
+    </signal>
+    <method name="GetManeuversList">
+      <doc>
+        <line>GetManeuversList = This method retrieves the list of next maneuvers</line>
+      </doc>
+      <arg name="requestedNumberOfManeuvers" type="q" direction="in">
+        <doc>
+          <line>requestedNumberOfManeuvers = the number of requested maneuvers</line>
+        </doc>
+      </arg>
+      <arg name="maneuverOffset" type="u" direction="in">
+        <doc>
+          <line>maneuverOffset = the offset of the first maneuver to retrieve</line>
+        </doc>
+      </arg>
+      <arg name="numberOfManeuvers" type="q" direction="out">
+        <doc>
+          <line>numberOfManeuvers = the number of retrieved maneuvers</line>
+          <line>Note: the number corresponds to the number of elements in the array</line>
+        </doc>
+      </arg>
+      <arg name="maneuversList" type="a(ssqiua(uuiia{i(yv)}))" direction="out">
+        <doc>
+          <line>maneuversList = array[struct(roadNumberAfterManeuver,roadNameAfterManeuver,roadPropertyAfterManeuver,drivingSide,offsetOfNextManeuver,maneuverDetails)]</line>
+          <line>roadNumberAfterManeuver = the number of the road after the maneuver (if a road has multiple road numbers, they will be separated by slashes ('/') and combined into one string)</line>
+          <line>roadNameAfterManeuver = the name of the road after the maneuver</line>
+          <line>roadPropertyAfterManeuver = enum(TOLL_ROADS, ... ,DEFAULT)</line>
+          <line>drivingSide = enum(LEFT,RIGHT)</line>
+          <line>offsetOfNextManeuver = the offset of the next maneuver in meters from the beginning of the route (next maneuver is the second maneuver on the route ahead)</line>
+          <line>maneuverDetails = array[struct(offsetOfManeuver,travelTime,direction,maneuver,maneuverData)]</line>
+          <line>offsetOfManeuver = the offset of the current maneuver in meters from the beginning of the route (current maneuver is the first maneuver on the route ahead)</line>
+          <line>travelTime = travel time to the basic maneuver in seconds</line>
+          <line>direction = direction of the maneuver in degree relatively to the North. Range [0:360]</line>
+          <line>maneuver = enum(INVALID,STRAIGHT_ON,TURN,CROSSROAD,ROUNDABOUT,HIGHWAY_ENTER,HIGHWAY_EXIT,BIFURCATION,FOLLOW_SPECIFIC_LANE,DESTINATION,WAYPOINT,ROAD_FORM_CHANGE)</line>
+          <line>maneuverData = array[struct(key, value)]</line>
+          <line>key = enum(LENGTH,DIRECTION,EXIT_NUMBER,ROAD_FORM,LANE_INFO,LATITUDE,LONGITUDE,ALTITUDE)</line>
+          <line>key = LENGTH, value of type 'q', when maneuver=ROUNDABOUT, expresses the length of the route segment between the entry to and the exit from the roundabout</line>
+          <line>key = DIRECTION, value of type 'q', enum(INVALID,STRAIGHT_ON,LEFT,SLIGHT_LEFT,HARD_LEFT,RIGHT,SLIGHT_RIGHT,HARD_RIGHT,UTURN_RIGHT,UTURN_LEFT)</line>
+          <line>key = EXIT_NUMBER, when maneuver=ROUNDABOUT, value of type 'q' that expresses the roundabout exit number</line>
+          <line>                   when maneuver=HIGHWAY_EXIT, value of type 's' that expresses the highway exit number</line>
+          <line>key = ROAD_FORM, value of type 'q', enum(INVALID,ROAD_REGULAR,ROAD_HIGHWAY_MOTORWAY,ROAD_FERRY)</line>
+          <line>key = LANE_INFO, value of type 'a(uuuq)', array[struct(laneIndex,laneDirections,directionToFollow,divider)]</line>
+          <line>laneIndex = number of the individual lane. Counting starts from zero, beginning at the left-most lane in the direction of travel (independent of the driving side)</line>
+          <line>laneDirections = bitfield where each bit corresponds to a certain direction. A 1-bit indicates that the corresponding part of the lane arrow is drawn in the lane information on the street (see the lane info bitmasks)</line>
+          <line>directionToFollow = bitfield where each bit corresponds to a certain direction. A 1-bit indicates that the corresponding part of the lane arrow matches the direction of the corresponding maneuver (see the lane info bitmasks). At most one bit of this bitmask will be set.</line>
+          <line>The bitmasks are: LANE_INFO_BITMASK_STRAIGHT,LANE_INFO_BITMASK_SLIGHTRIGHT,LANE_INFO_BITMASK_RIGHT,LANE_INFO_BITMASK_SHARPRIGHT,LANE_INFO_BITMASK_RIGHTUTURN,LANE_INFO_BITMASK_SLIGHTLEFT,LANE_INFO_BITMASK_LEFT,LANE_INFO_BITMASK_SHARPLEFT,LANE_INFO_BITMASK_LEFTUTURN</line>
+          <line>divider = indicates the type of divider between the given lane and the next one to the right, in the direction of travel</line>
+          <line>          enum(DIVIDER_UNDEFINED,DIVIDER_INTERRUPTEDLONG,DIVIDER_INTERRUPTEDSHORT,DIVIDER_SOLIDSINGLE,DIVIDER_SOLIDDOUBLE,DIVIDER_SOLIDINTERRUPTED,DIVIDER_INTERRUPTEDSOLID)</line>
+          <line>Note: To describe the divider on the left side of the left-most lane, use the following entry in LANE_INFO: (laneIndex=0xffffffff,laneDirections=0x00000000,directionToFollow=0x00000000,divider=type)</line>
+          <line>key = LATITUDE, value = value of type 'd', that expresses the latitude of the starting point in format %3.6f. Range [-90:+90]. Example: 48.053250</line>
+          <line>key = LONGITUDE, value = value of type 'd', that expresses the longitude of the starting point in format %3.6f. Range [-180:+180]. Example: 8.324500</line>
+          <line>key = ALTITUDE, value = value of type 'i', that expresses the altitude of the starting point in meters</line>
+        </doc>
+      </arg>
+      <error name="org.genivi.navigationcore.Guidance.Error.NoManeuver">
+        <doc>
+          <line>This error is generated in case there's no maneuver until the destination</line>
+        </doc>
+      </error>
+    </method>
+    <signal name="VehicleLeftTheRoute">
+      <doc>
+        <line>VehicleLeftTheRoute = This signal is emitted when the vehicle has left the route</line>
+      </doc>
+    </signal>
+    <method name="SetRouteCalculationMode">
+      <doc>
+        <line>SetRouteCalculationMode = This method configures the way the navigation application wants the navigation core to behave of reroute trigger</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <arg name="routeCalculationMode" type="i" direction="in">
+        <doc>
+          <line>routeCalculationMode = enum(INVALID,ALL_MANUAL,ALL_AUTOMATIC,TRAFFIC_MANUAL,OFF_ROUTE_MANUAL)</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="SkipNextManeuver">
+      <doc>
+        <line>SkipNextManeuver = This method allows to jump behind the current maneuver</line>
+      </doc>
+      <arg name="sessionHandle" type="u" direction="in">
+        <doc>
+          <line>sessionHandle = Session handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value</line>
+        </doc>
+      </arg>
+      <error name="org.genivi.navigationcore.Guidance.Error.NoManeuver">
+        <doc>
+          <line>This error is generated in case there's no maneuver until the destination</line>
+        </doc>
+      </error>
+    </method>
+    <method name="GetGuidanceStatus">
+      <doc>
+        <line>GetGuidanceStatus = This method retrieves the guidance status</line>
+      </doc>
+      <arg name="guidanceStatus" type="i" direction="out">
+        <doc>
+          <line>guidanceStatus = enum(INVALID,ACTIVE,INACTIVE)</line>
+          <line>ACTIVE means that NavigationCore is providing guidance information</line>
+          <line>INACTIVE means that NavigationCore is not providing guidance information</line>
+        </doc>
+      </arg>
+      <arg name="routeHandle" type="u" direction="out">
+        <doc>
+          <line>routeHandle = Active route handle. Range[0x0:0x7fffffff]. 0x0 is reserved as an invalid handle value. Should be ignored when guidanceStatus=INACTIVE</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="SetVoiceGuidanceSettings">
+      <doc>
+        <line>SetVoiceGuidanceSettings = This method sets the voice guidance settings</line>
+      </doc>
+      <arg name="promptMode" type="i" direction="in">
+        <doc>
+          <line>mode = enum(INVALID,DISABLED_PROMPT,AUTOMATIC_PROMPT,MANUAL_PROMPT, ... )</line>
+          <line>MANUAL_PROMPT means that a client application can ask the NavigationCore to play the voice prompts</line>
+          <line>AUTOMATIC_PROMPT means that the voice prompts will be requested by NavigationCore automatically</line>
+          <line>DISABLED_PROMPT means that the client application will the voice generator component directly to play the messages (bypassing the NavigationCore)</line>
+        </doc>
+      </arg>
+    </method>
+    <method name="GetVoiceGuidanceSettings">
+      <doc>
+        <line>GetVoiceGuidanceSettings = This method returns the used voice guidance settings</line>
+      </doc>
+      <arg name="promptMode" type="i" direction="out">
+        <doc>
+          <line>mode = enum(INVALID,DISABLED_PROMPT,AUTOMATIC_PROMPT,MANUAL_PROMPT, ... )</line>
+          <line>MANUAL_PROMPT means that a client application can ask the NavigationCore to play the voice prompts</line>
+          <line>AUTOMATIC_PROMPT means that the voice prompts will be requested by NavigationCore automatically</line>
+          <line>DISABLED_PROMPT means that the client application will the voice generator component directly to play the messages (bypassing the NavigationCore)</line>
+        </doc>
+      </arg>
+    </method>
+    <signal name="PositionToRouteChanged">
+      <doc>
+        <line>PositionToRouteChanged = This signal is emitted when the vehicle is off-the-road network and either the heading or the distance (or both) to the closest point on the active route changes</line>
+      </doc>
+      <arg name="distance" type="u">
+        <doc>
+          <line>distance = distance in meters to the closest point on the active route</line>
+        </doc>
+      </arg>
+      <arg name="direction" type="i">
+        <doc>
+          <line>direction = direction in degrees relatively to the closest point on the active route. Range [0:360]</line>
+        </doc>
+      </arg>
+    </signal>
+    <signal name="ActiveRouteChanged">
+      <doc>
+        <line>ActiveRouteChanged = This signal is emitted when the active route changes</line>
+      </doc>
+      <arg name="changeCause" type="i">
+        <doc>
+          <line>changeCause = enum(INVALID,TRAFFIC,OFF_ROUTE,MANUAL,...)</line>
+        </doc>
+      </arg>
+    </signal>
+  </interface>
 </node>
