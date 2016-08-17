@@ -13,10 +13,10 @@ Mapviewer::Mapviewer( DBus::Connection &connection )
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::SessionGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
-    version._2 = 1;
-    version._3 = 2;
-    version._4 = std::string("Session");
+    version._1 = 3;
+    version._2 = 0;
+    version._3 = 0;
+    version._4 = std::string("21-01-2014");
     return version;
 }
 
@@ -52,10 +52,10 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::ConfigurationGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
+    version._1 = 3;
     version._2 = 0;
     version._3 = 0;
-    version._4 = std::string("Configuration");
+    version._4 = std::string("21-01-2014");
     return version;
 }
 
@@ -122,10 +122,10 @@ std::vector< ::DBus::Struct< std::string, std::string, std::string > > Mapviewer
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::MapViewerControlGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
+    version._1 = 3;
     version._2 = 1;
-    version._3 = 2;
-    version._4 = std::string("MapviewerControl");
+    version._3 = 0;
+    version._4 = std::string("03-03-2014");
     return version;
 }
 
