@@ -10,8 +10,8 @@
 extern "C" {
     #include "navicore.h"
     #include "glview.h"
-    #include "png.h"
-    #include "font.h"
+    //#include "png.h"
+    //#include "font.h"
     //#include "navi.h"
     #include "HMI_Icon.h"
     #include "NaviTrace.h"
@@ -36,15 +36,17 @@ using namespace std;
 const char *navi_config_hmi_udi_data_path	= NAVI_HOME_PATH NAVI_DATA_PATH "HMI/";
 const char *navi_config_hmi_udi_info_file	= NAVI_HOME_PATH NAVI_DATA_PATH "HMI/udi_info";
 
-#define NAVI_DATA_PATH_SIZE		(256)
-char navi_config_path[NAVI_DATA_PATH_SIZE]={};
-char navi_config_map_db_path[NAVI_DATA_PATH_SIZE]={};
-char navi_config_user_data_path[NAVI_DATA_PATH_SIZE]={};
-char navi_config_map_udi_data_path[NAVI_DATA_PATH_SIZE]={};
-char navi_config_map_udi_info_file[NAVI_DATA_PATH_SIZE]={};
+#define NAVI_DATA_PATH_SIZE     256
+//char navi_config_path[NAVI_DATA_PATH_SIZE]={};
+//char navi_config_map_db_path[NAVI_DATA_PATH_SIZE]={};
+//char navi_config_user_data_path[NAVI_DATA_PATH_SIZE]={};
+//char navi_config_map_udi_data_path[NAVI_DATA_PATH_SIZE]={};
+//char navi_config_map_udi_info_file[NAVI_DATA_PATH_SIZE]={};
+
+/* keep this to keep compatibility with font.cpp... */
 char navi_config_map_font_file[NAVI_DATA_PATH_SIZE]={};
 
-static NaviContext g_ctx;
+/*static*/ NaviContext g_ctx;
 
 /* function declarations: */
 static void sample_hmi_set_pin_mode(int pin);
@@ -52,12 +54,12 @@ static int sample_hmi_keyboard_handle_key(unsigned int key, unsigned int state);
 void sample_hmi_draw_compass(FLOAT rotate);
 
 /* TODO: Fix this, this is crapy dirty */
-void sample_hmi_request_update(void)
+/*void sample_hmi_request_update(void)
 {
-    g_ctx.display.sample_hmi_request_update();
-}
+    g_ctx.display.hmi.sample_hmi_request_update();
+}*/
 
-INT32 BitmapFontCallBack(NCBITMAPFONTINFO* pInfo)
+/*INT32 BitmapFontCallBack(NCBITMAPFONTINFO* pInfo)
 {
 	int result = 0;
 
@@ -102,7 +104,7 @@ INT32 MapDrawEndCallBack(NCDRAWENDINFO* pInfo)
 	sample_hmi_draw_compass(pInfo->rotate);
 	sample_hmi_request_update();
 	return (1);
-}
+}*/
 
 ////////////////////////////////
 
@@ -319,6 +321,7 @@ static void hmiMP_GL_DrawSquares(FLOAT x, FLOAT y, FLOAT width, FLOAT height)
 
 	MP_GL_Draw(GL_TRIANGLE_STRIP, squares, 4);
 }
+
 
 void sample_hmi_draw_compass(FLOAT rotate)
 {
@@ -651,7 +654,7 @@ int sample_hmi_button_down(int pointer_sx,int pointer_sy)
 	if(hmi_onmap_buttonId > -1){
 		printf("sample_hmi_check_button_area (%d)\n",hmi_onmap_buttonId);
 		hmi_onmap_button = 1;
-		g_ctx.display.sample_hmi_request_update();
+		g_ctx.display.hmi.sample_hmi_request_update();
 		return(1);
 	}
 	return(0);
@@ -662,7 +665,7 @@ int sample_hmi_button_up(int pointer_sx,int pointer_sy)
 	if(hmi_onmap_button == 1){
 		hmi_onmap_button = 0;
 		hmi_onmap_buttonId = sample_hmi_check_button_area(pointer_sx,pointer_sy,0);
-		g_ctx.display.sample_hmi_request_update();
+		g_ctx.display.hmi.sample_hmi_request_update();
 		sample_hmi_request_action(hmi_onmap_buttonId);
 		return(1);
 	}
@@ -701,17 +704,19 @@ static int main_arg(int argc, char *argv[])
 	home = getenv("NAVI_DATA_DIR");
 
 	if(home != 0){
-		strcpy(navi_config_path, home);
+		/*strcpy(navi_config_path, home);
 		if ((navi_config_path[strlen(navi_config_path) - 1] != '/') &&
 				(sizeof(navi_config_path) > (strlen(navi_config_path) + 1))) {
 			strcat(navi_config_path, "/");
-		}
+		}*/
+        g_ctx.navi_config_path = std::string(home);
+        if (g_ctx.navi_config_path.back() != '/') g_ctx.navi_config_path += "/";
 		g_ctx.region = NAVI_REGION_OPTIONAL;
 	}
 
 	for(i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-display") == 0) {
-			g_ctx.display.name = argv[i+1];
+			g_ctx.display.name = std::string(argv[i+1]);
 			i++;
 		}
 		else if(strcmp(argv[i], "-debug") == 0) {
@@ -756,11 +761,14 @@ static int main_arg(int argc, char *argv[])
 			i++;
 		}
 		else if (strcmp(argv[i], "--data") == 0) {
-			strcpy(navi_config_path,argv[i+1]);
+			/*strcpy(navi_config_path,argv[i+1]);
 			if ((navi_config_path[strlen(navi_config_path) - 1] != '/') &&
 					(sizeof(navi_config_path) > (strlen(navi_config_path) + 1))) {
 				strcat(navi_config_path, "/");
-			}
+			}*/
+            g_ctx.navi_config_path = std::string(argv[i+1]);
+            if (g_ctx.navi_config_path.back() != '/') g_ctx.navi_config_path += "/";
+        
 			g_ctx.region = NAVI_REGION_OPTIONAL;
 			i++;
 		}
@@ -811,33 +819,46 @@ void NaviContext::naviStartUpRegion(void)
 	/* ---------------------------------------------------------------------------------- */
 	switch(region){
         case NAVI_REGION_JAPAN:
-            strcpy(navi_config_path, NAVI_CONFIG_PATH_JAPAN);
+            //strcpy(navi_config_path, NAVI_CONFIG_PATH_JAPAN);
+            g_ctx.navi_config_path = std::string(NAVI_CONFIG_PATH_JAPAN);
             break;
         case NAVI_REGION_UK:
-            strcpy(navi_config_path, NAVI_CONFIG_PATH_UK);
+            //strcpy(navi_config_path, NAVI_CONFIG_PATH_UK);
+            g_ctx.navi_config_path = std::string(NAVI_CONFIG_PATH_UK);
             break;
         case NAVI_REGION_GERMANY:
-            strcpy(navi_config_path, NAVI_CONFIG_PATH_GERMANY);
+            //strcpy(navi_config_path, NAVI_CONFIG_PATH_GERMANY);
+            g_ctx.navi_config_path = std::string(NAVI_CONFIG_PATH_GERMANY);
             break;
         case NAVI_REGION_NEVADA:
-            strcpy(navi_config_path, NAVI_CONFIG_PATH_NEVADA);
+            //strcpy(navi_config_path, NAVI_CONFIG_PATH_NEVADA);
+            g_ctx.navi_config_path = std::string(NAVI_CONFIG_PATH_NEVADA);
             break;
         default:
             break;
 	}
 
-	strcat(navi_config_map_db_path			,navi_config_path); strcat(navi_config_map_db_path			,"Map/JPN/");
+	/*strcat(navi_config_map_db_path			,navi_config_path); strcat(navi_config_map_db_path			,"Map/JPN/");
 	strcat(navi_config_user_data_path		,navi_config_path); strcat(navi_config_user_data_path		,"Data");
 	strcat(navi_config_map_udi_data_path    ,navi_config_path); strcat(navi_config_map_udi_data_path	,"Data/MD/UDI/");
 	strcat(navi_config_map_udi_info_file	,navi_config_path); strcat(navi_config_map_udi_info_file	,"Data/MD/UDI/udi_info");
-	strcat(navi_config_map_font_file		,navi_config_path); strcat(navi_config_map_font_file		,"IPAfont00303/ipagp.ttf");
+	strcat(navi_config_map_font_file		,navi_config_path); strcat(navi_config_map_font_file		,"IPAfont00303/ipagp.ttf");*/
+    g_ctx.navi_config_map_db_path = g_ctx.navi_config_path + std::string("Map/JPN/");
+    g_ctx.navi_config_user_data_path = g_ctx.navi_config_path + std::string("Data");
+    g_ctx.navi_config_map_udi_data_path = g_ctx.navi_config_path + std::string("Data/MD/UDI/");
+    g_ctx.navi_config_map_udi_info_file = g_ctx.navi_config_path + std::string("Data/MD/UDI/udi_info");
+    g_ctx.navi_config_map_font_file = g_ctx.navi_config_path + std::string("IPAfont00303/ipagp.ttf");
 
-	TRACE_INFO("navi_config_path             (%s)", navi_config_path);
-	TRACE_INFO("navi_config_map_db_path      (%s)", navi_config_map_db_path);
-	TRACE_INFO("navi_config_user_data_path   (%s)", navi_config_user_data_path);
-	TRACE_INFO("navi_config_map_udi_data_path(%s)", navi_config_map_udi_data_path);
-	TRACE_INFO("navi_config_map_udi_info_file(%s)", navi_config_map_udi_info_file);
-	TRACE_INFO("navi_config_map_font_file    (%s)", navi_config_map_font_file);
+    /* TODO: workaround to keep compatibility with font.cpp: */
+    //strncpy(navi_config_map_font_file, g_ctx.navi_config_map_font_file.c_str(), NAVI_DATA_PATH_SIZE)[NAVI_DATA_PATH_SIZE-1] = '\0';
+    strcpy(&navi_config_map_font_file[0], g_ctx.navi_config_map_font_file.c_str());
+    
+	TRACE_INFO("navi_config_path             (%s)", navi_config_path.c_str());
+	TRACE_INFO("navi_config_map_db_path      (%s)", navi_config_map_db_path.c_str());
+	TRACE_INFO("navi_config_user_data_path   (%s)", navi_config_user_data_path.c_str());
+	TRACE_INFO("navi_config_map_udi_data_path(%s)", navi_config_map_udi_data_path.c_str());
+	TRACE_INFO("navi_config_map_udi_info_file(%s)", navi_config_map_udi_info_file.c_str());
+	TRACE_INFO("navi_config_map_font_file    (%s)", navi_config_map_font_file.c_str());
 
     if(region == NAVI_REGION_JAPAN) {
 		display.hmi.map_max_scale = 12;
@@ -976,7 +997,7 @@ int map_timer(GLVContext glv_ctx, int maps, int group, int id)
 
 int map_init(GLVContext glv_ctx, int maps)
 {
-	NC_MP_SetUDIResource((Char*)navi_config_map_udi_data_path,(Char*)navi_config_map_udi_info_file);
+	NC_MP_SetUDIResource(/*(Char*)*/g_ctx.navi_config_map_udi_data_path.c_str(), /*(Char*)*/g_ctx.navi_config_map_udi_info_file.c_str());
 
 	NC_MP_InitResource(maps);
 
@@ -1038,21 +1059,23 @@ int main(int argc, char *argv[])
 
     TRACE_INFO("%s", APP_NAME_TEXT);
 
-	g_ctx.naviStartUpResolution();
-	g_ctx.naviStartUpRegion();
+    dbusServerLoop(NULL); // add CDR
+#if 0
+	g_ctx.naviStartUpResolution();  // CDR - navicore (1) - NaviContext
+	g_ctx.naviStartUpRegion();      // CDR - navicore (1) - NaviContext
 
-	glv_dpy = glvOpenDisplay(g_ctx.display.name);
+	glv_dpy = glvOpenDisplay(g_ctx.display.name);   // CDR - navicore (1) - NaviContext.display
 	if(!glv_dpy){
 		TRACE_ERROR("glvOpenDisplay() failed");
 		return -1;
 	}
 	/* ----------------------------------------------------------------------------------------------- */
-	NC_MP_SetBitmapFontCB(BitmapFontCallBack);
-	NC_MP_SetImageReadForFileCB(ReadImageForFileCallBack);
-	NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);
-	NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);
+	NC_MP_SetBitmapFontCB(BitmapFontCallBack);                  // CDR - navicore (1) - NaviContext
+	NC_MP_SetImageReadForFileCB(ReadImageForFileCallBack);      // CDR - navicore (1) - NaviContext
+	NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);    // CDR - navicore (1) - NaviContext
+	NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);                  // CDR - navicore (1) - NaviContext
 
-	rc = NC_Initialize(g_ctx.WinWidth, g_ctx.WinHeight,
+	rc = NC_Initialize(g_ctx.WinWidth, g_ctx.WinHeight,         // CDR - navicore (1) - NaviContext
             navi_config_user_data_path, navi_config_map_db_path, "locatorPath");
 	if(NC_SUCCESS != rc){
 		TRACE_ERROR("NC_Initialize error");
@@ -1061,43 +1084,43 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);
-	NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale);
+	NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);                          // CDR - mapviewer (3) - MapContext (vect)
+	NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale); // CDR - mapviewer (3) - MapContext (vect)
 	/* ----------------------------------------------------------------------------------------------- */
-	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;
-	glv_input_func.touch_down   = sample_hmi_button_down;
-	glv_input_func.touch_up     = sample_hmi_button_up;
+	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;       // CDR - navicore (1) - NaviContext
+	glv_input_func.touch_down   = sample_hmi_button_down;               // CDR - navicore (1) - NaviContext
+	glv_input_func.touch_up     = sample_hmi_button_up;                 // CDR - navicore (1) - NaviContext
 
-	glv_map_window = glvCreateNativeWindow(glv_dpy, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, NULL);
-	glv_hmi_window = glvCreateNativeWindow(glv_dpy, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, glv_map_window);
+	glv_map_window = glvCreateNativeWindow(glv_dpy, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, NULL);           // CDR - mapviewInstance (4) - MapContext (vect)
+	glv_hmi_window = glvCreateNativeWindow(glv_dpy, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, glv_map_window); // CDR - navicore (1) - NaviContext
 
 	glvInitTimer();
 
 	/* ----------------------------------------------------------------------------------------------- */
-	g_ctx.display.SurfaceViewEventFunc.init		= map_init;
+	g_ctx.display.SurfaceViewEventFunc.init		= map_init;     // CDR - mapviewInstance (4) - MapContext (vect)
 	g_ctx.display.SurfaceViewEventFunc.reshape	= map_reshape;
 	g_ctx.display.SurfaceViewEventFunc.redraw	= map_redraw;
 	g_ctx.display.SurfaceViewEventFunc.update	= NULL;
 	g_ctx.display.SurfaceViewEventFunc.timer	= map_timer;
 	g_ctx.display.SurfaceViewEventFunc.gesture	= map_gesture;
 
-	g_ctx.display.map_context = glvCreateSurfaceView(glv_map_window, NC_MP_MAP_MAIN, &g_ctx.display.SurfaceViewEventFunc);
+	g_ctx.display.map_context = glvCreateSurfaceView(glv_map_window, NC_MP_MAP_MAIN, &g_ctx.display.SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
 
-	g_ctx.display.hmi_SurfaceViewEventFunc.init		= hmi_init;
-	g_ctx.display.hmi_SurfaceViewEventFunc.reshape	= NULL;
-	g_ctx.display.hmi_SurfaceViewEventFunc.redraw	= NULL;
-	g_ctx.display.hmi_SurfaceViewEventFunc.update	= hmi_update;
-	g_ctx.display.hmi_SurfaceViewEventFunc.timer	= NULL;
-	g_ctx.display.hmi_SurfaceViewEventFunc.gesture	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.init		= hmi_init; // CDR - mapviewInstance (4)
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.reshape	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.redraw	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.update	= hmi_update;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.timer	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.gesture	= NULL;
 
-	g_ctx.display.hmi_context = glvCreateSurfaceView(glv_hmi_window, NC_MP_MAP_MAIN, &g_ctx.display.hmi_SurfaceViewEventFunc);
+	g_ctx.display.hmi.hmi_context = glvCreateSurfaceView(glv_hmi_window, NC_MP_MAP_MAIN, &g_ctx.display.hmi.hmi_SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
 
 	/* ----------------------------------------------------------------------------------------------- */
-	glvCreateTimer(g_ctx.display.map_context,1000,GESTURE_FLICK_TIMER_ID     ,GLV_TIMER_REPEAT   ,  50);
-	glvCreateTimer(g_ctx.display.map_context,1000,GESTURE_LONG_PRESS_TIMER_ID,GLV_TIMER_ONLY_ONCE, 700);
+	glvCreateTimer(g_ctx.display.map_context,1000,GESTURE_FLICK_TIMER_ID     ,GLV_TIMER_REPEAT   ,  50);    // CDR - navicore (1) - NaviContext.display
+	glvCreateTimer(g_ctx.display.map_context,1000,GESTURE_LONG_PRESS_TIMER_ID,GLV_TIMER_ONLY_ONCE, 700);    // CDR - navicore (1) - NaviContext.display
 	/* ----------------------------------------------------------------------------------------------- */
 
-	sample_createGuideThread(&g_ctx.display);
+	sample_createGuideThread(&g_ctx.display); // CDR Route (2) - joinable thread, join at route destruction
 
     createDbusServerThread();
 
@@ -1109,11 +1132,11 @@ int main(int argc, char *argv[])
 	glvDestroyNativeWindow(glv_hmi_window);
 
 	glvCloseDisplay(glv_dpy);
-
+#endif
 	return(0);
 }
 
-static int sample_hmi_keyboard_handle_key(
+/*static int sample_hmi_keyboard_handle_key(
                     unsigned int key,
                     unsigned int state)
 {
@@ -1160,4 +1183,4 @@ static int sample_hmi_keyboard_handle_key(
     	}
     }
     return(0);
-}
+}*/

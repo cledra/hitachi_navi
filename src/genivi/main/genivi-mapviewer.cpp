@@ -3,6 +3,35 @@
 #include <string>
 #include <tuple>
 #include "genivi-mapviewer.h"
+#include "NaviTrace.h"
+
+using namespace std;
+
+class MapviewerSession
+{
+    public:
+        MapviewerSession(int32_t id_, string client_):
+            id(id_){
+                client = string(client_);
+            }
+
+        int32_t id;
+        string client;
+};
+
+class MapviewInstance
+{
+    public:
+        MapviewInstance(int32_t id_, string client_):
+            id(id_){
+                client = string(client_);
+            }
+
+        int32_t id;
+        string client;
+};
+
+static std::vector<struct MapviewerSession> MapviewerSessionList;
 
 Mapviewer::Mapviewer( DBus::Connection &connection )
     : DBus::ObjectAdaptor(connection, "/org/genivi/mapviewer"),
@@ -12,6 +41,7 @@ Mapviewer::Mapviewer( DBus::Connection &connection )
 
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::SessionGetVersion()
 {
+    TRACE_WARN("TODO: implement this function");
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
     version._1 = 0;
     version._2 = 1;
@@ -23,22 +53,52 @@ Mapviewer::Mapviewer( DBus::Connection &connection )
 uint32_t Mapviewer::CreateSession(const std::string& client)
 {
     lastSession++;
-    fprintf(stderr,"SESSION ADAPTOR - Created session %d [%s]\n",lastSession,client.c_str());
+    //fprintf(stderr,"SESSION ADAPTOR - Created session %d [%s]\n",lastSession,client.c_str());
+    TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
+
+    MapviewerSession s(lastSession, client);
+    MapviewerSessionList.push_back(s);
+    
     return lastSession;
 }
 
 void Mapviewer::DeleteSession(const uint32_t& sessionHandle)
 {
-    fprintf(stderr,"SESSION ADAPTOR - Deleted session %d\n",sessionHandle);
+    TRACE_INFO("SESSION ADAPTOR - Deleted session %d", sessionHandle);
+
+    std::vector<struct MapviewerSession>::iterator it;
+    for (it = MapviewerSessionList.begin() ; it != MapviewerSessionList.end(); it++)
+    {
+        if (it->id == sessionHandle) break;
+    }
+    if (it != MapviewerSessionList.end())
+    {
+        TRACE_DEBUG("SESSION ADAPTOR - Delete session %d (%s)", sessionHandle, it->client.c_str());
+        MapviewerSessionList.erase(it);
+    }
 }
 
 int32_t Mapviewer::GetSessionStatus(const uint32_t& sessionHandle)
 {
-    return sessionHandle%2;
+    std::vector<struct MapviewerSession>::iterator it;
+    int i=0;
+    for (it = MapviewerSessionList.begin() ; it != MapviewerSessionList.end(); it++)
+    {
+        if (it->id != sessionHandle) i++;
+        else break;
+    }
+    if (i < MapviewerSessionList.size())
+    {
+        TRACE_DEBUG("SESSION ADAPTOR - Session %d is present in list at index %d (%s)", sessionHandle, i, it->client.c_str());
+        return 0; // not available
+    }
+
+    return 1; // available
 }
 
 std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions()
 {
+    TRACE_WARN("TODO: implement this function");
     std::vector< ::DBus::Struct< uint32_t, std::string > > list;
     ::DBus::Struct< uint32_t, std::string > a,b;
     a._1 = 1; a._2 = std::string("Session 1");
@@ -51,6 +111,7 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions
 // Configuration interface
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::ConfigurationGetVersion()
 {
+    TRACE_WARN("TODO: implement this function");
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
     version._1 = 0;
     version._2 = 0;
@@ -61,27 +122,27 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions
 
 void Mapviewer::SetUnitsOfMeasurement(const std::map< int32_t, int32_t >& unitsOfMeasurementList)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::map< int32_t, int32_t > Mapviewer::GetUnitsOfMeasurement()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::map< int32_t, std::vector< int32_t > > Mapviewer::GetSupportedUnitsOfMeasurement()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetTimeFormat(const int32_t& timeFormat)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetTimeFormat()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedTimeFormats()
@@ -91,32 +152,32 @@ std::vector< int32_t > Mapviewer::GetSupportedTimeFormats()
 
 void Mapviewer::SetCoordinatesFormat(const int32_t& coordinatesFormat)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetCoordinatesFormat()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedCoordinatesFormats()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetLocale(const std::string& languageCode, const std::string& countryCode, const std::string& scriptCode)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::GetLocale(std::string& languageCode, std::string& countryCode, std::string& scriptCode)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< std::string, std::string, std::string > > Mapviewer::GetSupportedLocales()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::MapViewerControlGetVersion()

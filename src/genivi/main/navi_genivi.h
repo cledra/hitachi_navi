@@ -25,6 +25,8 @@
 #include "GeniviNaviMapMatchedPosition.hpp"
 #include "GeniviNaviRouting.hpp"*/
 
+#include <string>
+
 extern "C" {
     #include "navicore.h"
     #include "glview.h"
@@ -61,7 +63,10 @@ class HmiContext
             set_pin(-1),
             compass(0),
             force_update_flag(0),
-            map_max_scale(0) {}
+            map_max_scale(0),
+            hmi_context(0),
+            glv_hmi_window(NULL) {}
+        void sample_hmi_request_update(void) { glvOnUpdate(hmi_context); }
 
         int sample_load_image_file;
         int move_with_car;
@@ -70,6 +75,9 @@ class HmiContext
         int compass;
         int force_update_flag;
         int map_max_scale;
+        GLVContext hmi_context = 0;
+        GLVEVENTFUNC_t hmi_SurfaceViewEventFunc;
+        GLVWindow glv_hmi_window;
 };
 
 
@@ -77,18 +85,18 @@ class DisplayContext
 {
     public:
         DisplayContext(): hmi(),
-            name(NULL),
+            name(""),
             map_context(0),
-            hmi_context(0) {}
-        void sample_hmi_request_update(void) { glvOnUpdate(hmi_context); }
+            glvDisplay(NULL),
+            glv_map_window(NULL) {}
         void sample_hmi_request_mapDraw(void){ glvOnReDraw(map_context); }
 
         HmiContext hmi;
-        char *name = NULL;
+        std::string name;
         GLVContext map_context = 0;
-        GLVContext hmi_context = 0;
         GLVEVENTFUNC_t SurfaceViewEventFunc;
-        GLVEVENTFUNC_t hmi_SurfaceViewEventFunc;
+        GLVDisplay glvDisplay;
+        GLVWindow glv_map_window;
 };
 
 
@@ -102,6 +110,12 @@ class NaviContext
             WinHeight(720),
             main_window_mapScale(2),
             /*hmi()*/
+            navi_config_path(""),
+            navi_config_map_db_path(""),
+            navi_config_user_data_path(""),
+            navi_config_map_udi_data_path(""),
+            navi_config_map_udi_info_file(""),
+            navi_config_map_font_file(""),
             display() {}
         void naviStartUpRegion(void);
         void naviStartUpResolution(void);
@@ -117,7 +131,15 @@ class NaviContext
         NAVI_REGION_e region;
         int WinWidth;
         int WinHeight;
-        int main_window_mapScale;
+        int main_window_mapScale; // TODO: move to MapViewInstance ?
+        /*char navi_config_path[NAVI_DATA_PATH_SIZE];
+        char navi_config_user_data_path[NAVI_DATA_PATH_SIZE];*/
+        std::string navi_config_path;
+        std::string navi_config_map_db_path;
+        std::string navi_config_user_data_path;
+        std::string navi_config_map_udi_data_path;
+        std::string navi_config_map_udi_info_file;
+        std::string navi_config_map_font_file;
         //std::shared_ptr<CommonAPI::ClientId> myPtrClientId;
         //v4::org::genivi::navigation::NavigationTypes::Handle myNaviHandle;
         //v4::org::genivi::navigation::navigationcore::GeniviNaviMapMatchedPosition myNaviMapMatchedPosition;

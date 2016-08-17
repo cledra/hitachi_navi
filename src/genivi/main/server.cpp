@@ -11,10 +11,13 @@ void leave_signal_handler(int sig)
     dispatcher.leave();
 }
 
-static void *dbusServerThread(void *no_arg)
+/*static void *dbusServerThread(void *no_arg)
 {
-    (void) no_arg;
+    dbusServerLoop(no_arg);
+}*/
 
+void dbusServerLoop(void *no_arg)
+{
     signal(SIGTERM, leave_signal_handler);
     signal(SIGINT, leave_signal_handler);
 
@@ -28,7 +31,7 @@ static void *dbusServerThread(void *no_arg)
     dispatcher.enter();
 }
 
-int createDbusServerThread(void)
+/*int createDbusServerThread(void)
 {
     pthread_t p;
     pthread_attr_t attr;
@@ -44,4 +47,4 @@ int createDbusServerThread(void)
     pthread_attr_destroy(&attr);
 
     return ret;
-}
+}*/

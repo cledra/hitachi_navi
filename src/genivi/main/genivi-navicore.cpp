@@ -3,6 +3,189 @@
 #include <string>
 #include <tuple>
 #include "genivi-navicore.h"
+#include "NaviTrace.h"
+#include "navi_genivi.h"
+#include "route.h"
+
+extern "C" {
+    #include "font.h"
+    #include "png.h"
+}
+
+// TODO: put in a session handle
+GLVWindow	glv_hmi_window;
+
+extern NaviContext g_ctx;
+extern void sample_hmi_draw_compass(FLOAT rotate); // TODO: move this to button.cpp
+extern int sample_hmi_button_down(int pointer_sx,int pointer_sy);  // TODO: move this to button.cpp
+extern int sample_hmi_button_up(int pointer_sx,int pointer_sy);  // TODO: move this to button.cpp
+
+static INT32 BitmapFontCallBack(NCBITMAPFONTINFO* pInfo)
+{
+	int result = 0;
+
+	initializeBitmapFont();
+	setColor(pInfo->color);
+	setOutLineColor(pInfo->outLineColor);
+	setBkgdColor(pInfo->bkgdColor);
+
+	result = createBitmapFont(
+			pInfo->str, pInfo->fontSize, pInfo->outLineFlg,
+			&pInfo->pBitMap,
+			&pInfo->width, &pInfo->height,
+			&pInfo->strWidth, &pInfo->strHeight,
+			pInfo->rotation, true);
+
+	if (result != 0) {
+		return (0);
+	}
+	return (1);
+}
+
+static INT32 ReadImageForFileCallBack(NCBITMAPINFO* pInfo)
+{
+	pInfo->pBitMap = (UChar *)readPngData(pInfo->path, &pInfo->width, &pInfo->height);
+	if (NULL == pInfo->pBitMap) {
+		return (0);
+	}
+	return (1);
+}
+
+static INT32 SetImageForMemoryCallBack(NCBITMAPINFO* pInfo)
+{
+	pInfo->pBitMap = (UChar *)setPngData(pInfo->image, pInfo->dataSize, &pInfo->width, &pInfo->height);
+	if (NULL == pInfo->pBitMap) {
+		return 0;
+	}
+	return 1;
+}
+
+static void sample_hmi_request_update(void) /* TODO: Fix this, this is crapy dirty */
+{
+    g_ctx.display.hmi.sample_hmi_request_update();
+}
+
+static INT32 MapDrawEndCallBack(NCDRAWENDINFO* pInfo)
+{
+	sample_hmi_draw_compass(pInfo->rotate);
+	sample_hmi_request_update();
+	return 1;
+}
+
+static int sample_hmi_keyboard_handle_key(
+                    unsigned int key,
+                    unsigned int state)
+{
+	if(g_ctx.display.map_context == 0) {
+		return 0;
+	}
+    
+    TRACE_INFO("Key is %d, state is %d", key, state);
+    if(state == GLV_KEYBOARD_KEY_STATE_PRESSED) {
+    	switch(key) {
+    	case 103:		// '↑'
+		   if(g_ctx.main_window_mapScale < g_ctx.display.hmi.map_max_scale){
+			   g_ctx.main_window_mapScale++;
+				   if (g_ctx.main_window_mapScale == 1) {
+					   g_ctx.main_window_mapScale++;
+				   }
+				   if(g_ctx.main_window_mapScale > g_ctx.display.hmi.map_max_scale)
+                        g_ctx.main_window_mapScale = g_ctx.display.hmi.map_max_scale;
+				  NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale);
+				  glvOnReDraw(g_ctx.display.map_context);
+		   }
+			break;
+		case 108:		// '↓'
+     	   if(g_ctx.main_window_mapScale > 0){
+     		   g_ctx.main_window_mapScale--;
+				   if (g_ctx.main_window_mapScale == 1) {
+					   g_ctx.main_window_mapScale--;
+				   }
+				   if(g_ctx.main_window_mapScale < 0)
+                       g_ctx.main_window_mapScale = 0;
+				  NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale);
+				  glvOnReDraw(g_ctx.display.map_context);
+     	   }
+     	   break;
+		case 25:		// 'p'
+			// route search
+            sample_calc_demo_route(g_ctx.display);
+			break;
+		case 30:		// 'a'
+			// own posi mode
+			NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);
+			glvOnReDraw(g_ctx.display.map_context);
+			break;
+    	}
+    }
+    return(0);
+}
+
+static int internal_create_session(NaviContext *ctx)
+{
+    //GLVDisplay	glv_dpy;
+	//GLVWindow	glv_map_window;
+	//GLVWindow	glv_hmi_window;
+	int rc;
+
+	ctx->naviStartUpResolution(); 
+	ctx->naviStartUpRegion();
+
+	ctx->display.glvDisplay = glvOpenDisplay((char*)ctx->display.name.c_str());
+	if(!ctx->display.glvDisplay){
+		TRACE_ERROR("glvOpenDisplay() failed");
+		return -1;
+	}
+
+	NC_MP_SetBitmapFontCB(BitmapFontCallBack);
+	NC_MP_SetImageReadForFileCB(ReadImageForFileCallBack);
+	NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);
+	NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);
+
+	rc = NC_Initialize(g_ctx.WinWidth, g_ctx.WinHeight,
+            g_ctx.navi_config_user_data_path.c_str(), g_ctx.navi_config_map_db_path.c_str(), "locatorPath");
+	if(NC_SUCCESS != rc){
+		TRACE_ERROR("NC_Initialize error");
+		TRACE_ERROR("\ttuser data path: %s", ctx->navi_config_user_data_path.c_str());
+		TRACE_ERROR("\tmap db path: %s", ctx->navi_config_map_db_path.c_str());
+		return -1;
+	}
+
+	//NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);                          // CDR - mapviewer (3) - MapContext (vect)
+	//NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale); // CDR - mapviewer (3) - MapContext (vect)
+
+	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;       // CDR - navicore (1) - NaviContext
+	glv_input_func.touch_down   = sample_hmi_button_down;               // CDR - navicore (1) - NaviContext
+	glv_input_func.touch_up     = sample_hmi_button_up;                 // CDR - navicore (1) - NaviContext
+
+	//glv_map_window = glvCreateNativeWindow(ctx->display.glvDisplay, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, NULL);           // CDR - mapviewinstance (4)
+	//glv_hmi_window = glvCreateNativeWindow(ctx->display.glvDisplay, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, glv_map_window); // CDR - mapviewinstance (4)
+
+	//glvInitTimer(); // CDR - mapviewinstance (4)
+
+	/*g_ctx.display.SurfaceViewEventFunc.init		= map_init;     // CDR - mapviewInstance (4) - MapContext (vect)
+	g_ctx.display.SurfaceViewEventFunc.reshape	= map_reshape;
+	g_ctx.display.SurfaceViewEventFunc.redraw	= map_redraw;
+	g_ctx.display.SurfaceViewEventFunc.update	= NULL;
+	g_ctx.display.SurfaceViewEventFunc.timer	= map_timer;
+	g_ctx.display.SurfaceViewEventFunc.gesture	= map_gesture;
+
+	g_ctx.display.map_context = glvCreateSurfaceView(glv_map_window, NC_MP_MAP_MAIN, &g_ctx.display.SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
+
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.init		= hmi_init; // CDR - mapviewInstance (4)
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.reshape	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.redraw	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.update	= hmi_update;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.timer	= NULL;
+	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.gesture	= NULL;
+
+	g_ctx.display.hmi.hmi_context = glvCreateSurfaceView(glv_hmi_window, NC_MP_MAP_MAIN, &g_ctx.display.hmi.hmi_SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
+
+	glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_FLICK_TIMER_ID, GLV_TIMER_REPEAT, 50);          // CDR - mapviewInstance (4)
+	glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_LONG_PRESS_TIMER_ID, GLV_TIMER_ONLY_ONCE, 700); // CDR - mapviewInstance (4)
+*/
+    return 0;
+}
 
 Navicore::Navicore( DBus::Connection &connection )
     : DBus::ObjectAdaptor(connection, "/org/genivi/navicore"),
@@ -23,18 +206,47 @@ Navicore::Navicore( DBus::Connection &connection )
 uint32_t Navicore::CreateSession(const std::string& client)
 {
     lastSession++;
-    fprintf(stderr,"SESSION ADAPTOR - Created session %d [%s]\n",lastSession,client.c_str());
+
+    if (lastSession == 1) // we only handle 1 session for now
+    {
+        if (internal_create_session(&g_ctx) < 0) // error
+        {
+            TRACE_ERROR("fail to create session (%s)", client.c_str());
+            return 0;
+        }
+    }
+    
+    TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession,client.c_str());
     return lastSession;
 }
 
 void Navicore::DeleteSession(const uint32_t& sessionHandle)
 {
-    fprintf(stderr,"SESSION ADAPTOR - Deleted session %d\n",sessionHandle);
+    if (sessionHandle == 1) // we only handle 1 session for now
+    {
+        //TODO: delete Mapviewer if it's not already done
+        if (g_ctx.display.glv_map_window)
+        {
+            glvDestroyNativeWindow(g_ctx.display.glv_map_window);
+            g_ctx.display.glv_map_window = NULL;
+        }
+        if (g_ctx.display.hmi.glv_hmi_window)
+        {
+            glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
+            g_ctx.display.hmi.glv_hmi_window = NULL;
+        }
+        glvCloseDisplay(g_ctx.display.glvDisplay);
+        g_ctx.display.glvDisplay = NULL;
+    }
+
+    TRACE_INFO("SESSION ADAPTOR - Deleted session %d\n", sessionHandle);
 }
 
 int32_t Navicore::GetSessionStatus(const uint32_t& sessionHandle)
 {
-    return sessionHandle%2;
+    if (sessionHandle == 1 && !NC_IsInitialized()) // we only handle 1 session for now
+        return 1; // available
+    return 0; // not available
 }
 
 std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions()
