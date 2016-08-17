@@ -196,10 +196,10 @@ Navicore::Navicore( DBus::Connection &connection )
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::SessionGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
-    version._2 = 1;
-    version._3 = 2;
-    version._4 = std::string("Session");
+    version._1 = 3;
+    version._2 = 0;
+    version._3 = 0;
+    version._4 = std::string("22-01-2014");
     return version;
 }
 
@@ -263,10 +263,10 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions(
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::RoutingGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
-    version._2 = 1;
-    version._3 = 2;
-    version._4 = std::string("Routing");
+    version._1 = 3;
+    version._2 = 0;
+    version._3 = 0;
+    version._4 = std::string("22-01-2014");
     return version;
 }
 
@@ -454,10 +454,10 @@ std::vector< ::DBus::Struct< uint32_t, uint32_t > > Navicore::GetBlockedRouteStr
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::PositionGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
+    version._1 = 3;
     version._2 = 0;
     version._3 = 0;
-    version._4 = std::string("MapMatchedPosition");
+    version._4 = std::string("21-01-2014");
     return version;
 }
 
@@ -545,10 +545,10 @@ std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::GuidanceGetVersion()
 {
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 0;
+    version._1 = 3;
     version._2 = 1;
-    version._3 = 2;
-    version._4 = std::string("Guidance");
+    version._3 = 0;
+    version._4 = std::string("03-03-2014");
     return version;
 }
 
