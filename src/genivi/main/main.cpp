@@ -7,6 +7,9 @@
 #include "guide.h"
 #include "server.h"
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 extern "C" {
     #include "navicore.h"
     #include "glview.h"
@@ -30,8 +33,8 @@ using namespace std;
 #define NAVI_CONFIG_PATH_GERMANY	NAVI_HOME_PATH NAVI_DATA_PATH "germany_TR6/"
 #define NAVI_CONFIG_PATH_NEVADA		NAVI_HOME_PATH NAVI_DATA_PATH "nevada_TR6/"
 
-#define GESTURE_FLICK_TIMER_ID			(1000)
-#define GESTURE_LONG_PRESS_TIMER_ID		(1001)
+/*const int GESTURE_FLICK_TIMER_ID = 1000;
+const int GESTURE_LONG_PRESS_TIMER_ID = 1001;*/
 
 const char *navi_config_hmi_udi_data_path	= NAVI_HOME_PATH NAVI_DATA_PATH "HMI/";
 const char *navi_config_hmi_udi_info_file	= NAVI_HOME_PATH NAVI_DATA_PATH "HMI/udi_info";
@@ -598,7 +601,15 @@ void sample_hmi_request_action(int buttonId)
 		glvOnReDraw(g_ctx.display.map_context);
 		break;
 	case DEMO_BUTTON_ROUTE:
-        sample_calc_demo_route(g_ctx.display);
+        // Add for Genivi:  make sure a single road exists; if not create it
+        if (g_ctx.lastRoute == 0)
+        {
+            g_ctx.lastRoute++;
+            TRACE_INFO("Create route %" PRIu32, g_ctx.lastRoute);
+            Route newRoute(g_ctx.lastRoute);
+            g_ctx.routes.push_back(newRoute);
+        }
+        sample_calc_demo_route(g_ctx.display, g_ctx.routes[0]);
 		break;
 	case DEMO_BUTTON_COMPASS:
 		if(g_ctx.display.hmi.compass== 0){
@@ -997,7 +1008,7 @@ int map_timer(GLVContext glv_ctx, int maps, int group, int id)
 
 int map_init(GLVContext glv_ctx, int maps)
 {
-	NC_MP_SetUDIResource(/*(Char*)*/g_ctx.navi_config_map_udi_data_path.c_str(), /*(Char*)*/g_ctx.navi_config_map_udi_info_file.c_str());
+	NC_MP_SetUDIResource(g_ctx.navi_config_map_udi_data_path.c_str(), g_ctx.navi_config_map_udi_info_file.c_str());
 
 	NC_MP_InitResource(maps);
 
@@ -1133,6 +1144,7 @@ int main(int argc, char *argv[])
 
 	glvCloseDisplay(glv_dpy);
 #endif
+    TRACE_INFO("Exit");
 	return(0);
 }
 

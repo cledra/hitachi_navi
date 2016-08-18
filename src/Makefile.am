@@ -532,7 +532,7 @@ libnavicore_la_CPPFLAGS = -fPIC \
         -I$(top_srcdir)/src/sms/sms-core/include \
         -I$(top_srcdir)/src/sms/sms-core/SMUtil
 
-libnavicore_la_CFLAGS = -fPIC \
+libnavicore_la_CFLAGS = -fPIC -g \
         @GLIB_CFLAGS@ \
         @FREETYPE2_CFLAGS@ \
         @WAYLAND_CFLAGS@ \
@@ -542,7 +542,7 @@ libnavicore_la_CFLAGS = -fPIC \
         @EXPAT_CFLAGS@ \
         @OPENSSL_CFLAGS@
 
-libnavicore_la_CXXFLAGS = -fPIC \
+libnavicore_la_CXXFLAGS = -fPIC -g \
         @GLIB_CFLAGS@ \
         @FREETYPE2_CFLAGS@ \
         @WAYLAND_CFLAGS@ \
@@ -560,6 +560,7 @@ libnavicore_la_LIBADD = \
         @EXPAT_LIBS@
 
 bin_PROGRAMS        = navi navi_genivi
+#bin_PROGRAMS        = navi_genivi
 
 navi_SOURCES = \
 sms/sms-core/include/navicore.h \
@@ -672,7 +673,7 @@ navi_LDADD = \
         @EXPAT_LIBS@ \
         @OPENSSL_LIBS@
 
-navi_genivi_CPPFLAGS = -std=c++11 \
+navi_genivi_CPPFLAGS = \
         -I$(top_srcdir)/src/sms \
         -I$(top_srcdir)/src/sms/lib/include \
         -I$(top_srcdir)/src/sms/locator/include \
@@ -684,7 +685,7 @@ navi_genivi_CPPFLAGS = -std=c++11 \
         -I$(top_srcdir)/src/main \
         -I$(top_srcdir)/src/pthread
 
-navi_genivi_CFLAGS = -fPIC \
+navi_genivi_CFLAGS = -fPIC -g \
         @GLIB_CFLAGS@ \
         @FREETYPE2_CFLAGS@ \
         @WAYLAND_CFLAGS@ \
@@ -695,7 +696,7 @@ navi_genivi_CFLAGS = -fPIC \
         @OPENSSL_CFLAGS@ \
         @DBUSCXX_CFLAGS@
 
-navi_genivi_CXXFLAGS = -fPIC -std=c++11 \
+navi_genivi_CXXFLAGS = -fPIC -std=c++11 -g \
         @GLIB_CFLAGS@ \
         @FREETYPE2_CFLAGS@ \
         @WAYLAND_CFLAGS@ \

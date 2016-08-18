@@ -27,6 +27,7 @@ void dbusServerLoop(void *no_arg)
 
     Navicore naviCore(conn);
     Mapviewer mapViewer(conn);
+    TRACE_DEBUG("DBus server loop initialized");
 
     dispatcher.enter();
 }

@@ -26,6 +26,7 @@
 #include "GeniviNaviRouting.hpp"*/
 
 #include <string>
+#include <vector>
 
 extern "C" {
     #include "navicore.h"
@@ -33,6 +34,9 @@ extern "C" {
     #include "SMCoreMP/MP_Def.h"
     #include "SMCoreMP/MP_GL.h"
 }
+
+#define GESTURE_FLICK_TIMER_ID      1000
+#define GESTURE_LONG_PRESS_TIMER_ID 1001
 
 typedef enum
 {
@@ -53,6 +57,73 @@ typedef enum
 } NAVI_RESOLUTION_e;
 
 
+typedef enum
+{
+    START_FLAG = 0,
+    DEST_FLAG = 1,
+    PIN_FLAG = 2
+} HMI_FLAG_INDEX_e;
+
+
+class WayPoint
+{
+    public:
+        WayPoint(double lat_, double lon_):
+            lat(lat_), lon(lon_) {}
+
+        double lat;
+        double lon;
+};
+
+
+class Route
+{
+    public:
+        Route(uint32_t handle_):
+            handle(handle_){}
+        
+
+        uint32_t handle;
+        std::vector<WayPoint> WayPoints;
+};
+
+
+class MapviewInstance
+{
+    public:
+        MapviewInstance(uint32_t handle_, std::string client_, int32_t ViewType_, int16_t w_, int16_t h_):
+            handle(handle_),
+            ViewType(ViewType_),
+            w(w_), h(h_) {
+                client = std::string(client_);
+            }
+
+        uint32_t handle;
+        int32_t ViewType;
+        int16_t w;
+        int16_t h;
+        std::string client;
+};
+
+
+class MapviewerSession
+{
+    public:
+        MapviewerSession(uint32_t handle_, std::string client_):
+            handle(handle_),
+            lastViewInstance(0) {
+                client = std::string(client_);
+            }
+        std::vector<MapviewInstance>::iterator retrieveMapviewInstanceIt(const uint32_t& mapViewInstanceHandle);
+
+        uint32_t handle;
+        std::string client;
+        std::vector<MapviewInstance> views;
+        uint32_t lastViewInstance;
+        pthread_t p;
+};
+
+
 class HmiContext
 {
     public:
@@ -67,6 +138,7 @@ class HmiContext
             hmi_context(0),
             glv_hmi_window(NULL) {}
         void sample_hmi_request_update(void) { glvOnUpdate(hmi_context); }
+        void set_flag_visible(HMI_FLAG_INDEX_e flag, Bool visible, double lat = 0.0, double lon = 0.0, Bool commit = false);
 
         int sample_load_image_file;
         int move_with_car;
@@ -78,6 +150,8 @@ class HmiContext
         GLVContext hmi_context = 0;
         GLVEVENTFUNC_t hmi_SurfaceViewEventFunc;
         GLVWindow glv_hmi_window;
+        SMMAPDYNUDI     demo_icon_info[ICON_CNT_MAX];
+        unsigned char   demo_disp_info[ICON_CNT_MAX];
 };
 
 
@@ -88,8 +162,10 @@ class DisplayContext
             name(""),
             map_context(0),
             glvDisplay(NULL),
-            glv_map_window(NULL) {}
+            glv_map_window(NULL)/*,
+            mapviewerSession(NULL)*/ {}
         void sample_hmi_request_mapDraw(void){ glvOnReDraw(map_context); }
+        std::vector<MapviewerSession>::iterator retrieveMapviewerSessionIt(const uint32_t& sessionHandle);
 
         HmiContext hmi;
         std::string name;
@@ -97,6 +173,8 @@ class DisplayContext
         GLVEVENTFUNC_t SurfaceViewEventFunc;
         GLVDisplay glvDisplay;
         GLVWindow glv_map_window;
+        //MapviewerSession *mapviewerSession;
+        std::vector<struct MapviewerSession> MapviewerSessionList;
 };
 
 
@@ -108,7 +186,7 @@ class NaviContext
             region(NAVI_REGION_JAPAN),
             WinWidth(1280),
             WinHeight(720),
-            main_window_mapScale(2),
+            main_window_mapScale(2), // TODO: move this to display / hmi
             /*hmi()*/
             navi_config_path(""),
             navi_config_map_db_path(""),
@@ -116,7 +194,8 @@ class NaviContext
             navi_config_map_udi_data_path(""),
             navi_config_map_udi_info_file(""),
             navi_config_map_font_file(""),
-            display() {}
+            display(),
+            lastRoute(0) {}
         void naviStartUpRegion(void);
         void naviStartUpResolution(void);
         void naviGetResolution(int *w,int *h) {
@@ -126,6 +205,7 @@ class NaviContext
         void naviGetRegion(NAVI_REGION_e *r) {
             *r = region;
         }
+        std::vector<Route>::iterator retrieveRouteIt(const uint32_t& routeHandle);
 
         NAVI_RESOLUTION_e resolution;
         NAVI_REGION_e region;
@@ -147,6 +227,8 @@ class NaviContext
         //v4::org::genivi::navigation::navigationcore::GeniviNaviRouting myGeniviNaviRouting;
         //HmiContext hmi;
         DisplayContext display;
+        uint32_t lastRoute;
+        std::vector<Route> routes;
 };
 
 

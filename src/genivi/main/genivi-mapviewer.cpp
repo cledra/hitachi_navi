@@ -4,34 +4,44 @@
 #include <tuple>
 #include "genivi-mapviewer.h"
 #include "NaviTrace.h"
+#include "navi_genivi.h"
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 using namespace std;
 
-class MapviewerSession
+extern NaviContext g_ctx;
+
+/* TODO: bring these functions here, or put them in the correct class: */
+extern int map_init(GLVContext glv_ctx, int maps);
+extern int map_reshape(GLVContext glv_ctx, int maps, int width, int height);
+extern int map_redraw(GLVContext glv_ctx, int maps);
+extern int map_timer(GLVContext glv_ctx, int maps, int group, int id);
+extern int map_gesture(GLVContext glv_ctx,int maps,int eventType,int x,int y,int distanceX,int distanceY,int velocityX,int velocityY);
+extern int hmi_init(GLVContext glv_ctx, int maps);
+extern int hmi_update(GLVContext glv_ctx,int maps);
+
+
+std::vector<MapviewerSession>::iterator DisplayContext::retrieveMapviewerSessionIt(const uint32_t& sessionHandle)
 {
-    public:
-        MapviewerSession(int32_t id_, string client_):
-            id(id_){
-                client = string(client_);
-            }
+    std::vector<MapviewerSession>::iterator it;
+    for (it = MapviewerSessionList.begin(); it != MapviewerSessionList.end(); it++)
+    {
+        if (it->handle == sessionHandle) return it;
+    }
+    return MapviewerSessionList.end();
+}
 
-        int32_t id;
-        string client;
-};
-
-class MapviewInstance
+std::vector<MapviewInstance>::iterator MapviewerSession::retrieveMapviewInstanceIt(const uint32_t& mapViewInstanceHandle)
 {
-    public:
-        MapviewInstance(int32_t id_, string client_):
-            id(id_){
-                client = string(client_);
-            }
-
-        int32_t id;
-        string client;
-};
-
-static std::vector<struct MapviewerSession> MapviewerSessionList;
+    std::vector<MapviewInstance>::iterator it;
+    for (it = views.begin(); it != views.end(); it++)
+    {
+        if (it->handle == mapViewInstanceHandle) return it;
+    }
+    return views.end();
+}
 
 Mapviewer::Mapviewer( DBus::Connection &connection )
     : DBus::ObjectAdaptor(connection, "/org/genivi/mapviewer"),
@@ -41,7 +51,6 @@ Mapviewer::Mapviewer( DBus::Connection &connection )
 
 ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Mapviewer::SessionGetVersion()
 {
-    TRACE_WARN("TODO: implement this function");
     ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
     version._1 = 3;
     version._2 = 0;
@@ -53,47 +62,45 @@ Mapviewer::Mapviewer( DBus::Connection &connection )
 uint32_t Mapviewer::CreateSession(const std::string& client)
 {
     lastSession++;
-    //fprintf(stderr,"SESSION ADAPTOR - Created session %d [%s]\n",lastSession,client.c_str());
+
     TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
 
     MapviewerSession s(lastSession, client);
-    MapviewerSessionList.push_back(s);
+    g_ctx.display.MapviewerSessionList.push_back(s);
     
-    return lastSession;
+    return s.handle;
 }
 
 void Mapviewer::DeleteSession(const uint32_t& sessionHandle)
 {
-    TRACE_INFO("SESSION ADAPTOR - Deleted session %d", sessionHandle);
+    TRACE_INFO("SESSION ADAPTOR - Delete session %" PRIu32, sessionHandle);
 
-    std::vector<struct MapviewerSession>::iterator it;
-    for (it = MapviewerSessionList.begin() ; it != MapviewerSessionList.end(); it++)
+    std::vector<struct MapviewerSession>::iterator it = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (it != g_ctx.display.MapviewerSessionList.end())
     {
-        if (it->id == sessionHandle) break;
+        // TODO: actually delete mapviewerSession
+        g_ctx.display.MapviewerSessionList.erase(it);
     }
-    if (it != MapviewerSessionList.end())
+    else
     {
-        TRACE_DEBUG("SESSION ADAPTOR - Delete session %d (%s)", sessionHandle, it->client.c_str());
-        MapviewerSessionList.erase(it);
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
     }
 }
 
 int32_t Mapviewer::GetSessionStatus(const uint32_t& sessionHandle)
 {
-    std::vector<struct MapviewerSession>::iterator it;
-    int i=0;
-    for (it = MapviewerSessionList.begin() ; it != MapviewerSessionList.end(); it++)
+    int32_t ret = 1; // available
+    TRACE_INFO("SESSION ADAPTOR - GetSessionStatus %" PRIu32, sessionHandle);
+
+    std::vector<struct MapviewerSession>::iterator it = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (it != g_ctx.display.MapviewerSessionList.end())
     {
-        if (it->id != sessionHandle) i++;
-        else break;
-    }
-    if (i < MapviewerSessionList.size())
-    {
-        TRACE_DEBUG("SESSION ADAPTOR - Session %d is present in list at index %d (%s)", sessionHandle, i, it->client.c_str());
-        return 0; // not available
+        TRACE_DEBUG("SESSION ADAPTOR - Session %" PRIu32 " is present in list (%s)", sessionHandle, it->client.c_str());
+        ret = 0; // not available
     }
 
-    return 1; // available
+    TRACE_DEBUG("return %d", ret);
+    return ret;
 }
 
 std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions()
@@ -147,7 +154,7 @@ int32_t Mapviewer::GetTimeFormat()
 
 std::vector< int32_t > Mapviewer::GetSupportedTimeFormats()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCoordinatesFormat(const int32_t& coordinatesFormat)
@@ -190,19 +197,122 @@ std::vector< ::DBus::Struct< std::string, std::string, std::string > > Mapviewer
     return version;
 }
 
+static void *glvEventLoop_(void *arg)
+{
+    glvEventLoop(arg);
+    return NULL;
+}
+
 uint32_t Mapviewer::CreateMapViewInstance(
     const uint32_t& sessionHandle,
     const ::DBus::Struct< uint16_t, uint16_t >& mapViewSize,
     const int32_t& mapViewType)
 {
-    // TODO
+    uint32_t handle;
+
+    TRACE_INFO("MapViewInstance creation for MapViewerSession %" PRIu32, sessionHandle);
+    TRACE_INFO("\tSize: %" PRIu16 "x%" PRIu16 ", type: %" PRIu32, mapViewSize._1, mapViewSize._2, mapViewType);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map != g_ctx.display.MapviewerSessionList.end())
+    {
+        // TODO: for now, we only support 1 view per session
+        if (map->lastViewInstance != 0) return 0;
+        
+        map->lastViewInstance++;
+        handle = map->lastViewInstance;
+        MapviewInstance newInstance(map->lastViewInstance, map->client, mapViewType, mapViewSize._1, mapViewSize._2);
+
+        // TODO: init
+        NC_MP_SetMapMoveWithCar(map->handle, 1);
+        NC_MP_SetMapScaleLevel(map->handle, g_ctx.main_window_mapScale); // TODO: see if we can move 'main_window_mapScale' to class MapviewerSession
+
+        g_ctx.display.glv_map_window = glvCreateNativeWindow(g_ctx.display.glvDisplay, 0, 0,
+            /*g_ctx.WinWidth, g_ctx.WinHeight*/ newInstance.w, newInstance.h, NULL); // TODO: see if we can move 'glv_map_window' to class MapviewerSession
+        g_ctx.display.hmi.glv_hmi_window = glvCreateNativeWindow(g_ctx.display.glvDisplay, 0, 0,
+            /*g_ctx.WinWidth, g_ctx.WinHeight*/ newInstance.w, newInstance.h, g_ctx.display.glv_map_window); // TODO: see if we can move 'glv_hmi_window' to class MapviewerSession
+
+        glvInitTimer();
+
+        g_ctx.display.SurfaceViewEventFunc.init		= map_init;
+        g_ctx.display.SurfaceViewEventFunc.reshape	= map_reshape;
+        g_ctx.display.SurfaceViewEventFunc.redraw	= map_redraw;
+        g_ctx.display.SurfaceViewEventFunc.update	= NULL;
+        g_ctx.display.SurfaceViewEventFunc.timer	= map_timer;
+        g_ctx.display.SurfaceViewEventFunc.gesture	= map_gesture;
+
+        g_ctx.display.map_context = glvCreateSurfaceView(
+            g_ctx.display.glv_map_window, NC_MP_MAP_MAIN, &g_ctx.display.SurfaceViewEventFunc);
+
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.init		= hmi_init;
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.reshape	= NULL;
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.redraw	= NULL;
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.update	= hmi_update;
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.timer	= NULL;
+        g_ctx.display.hmi.hmi_SurfaceViewEventFunc.gesture	= NULL;
+
+        g_ctx.display.hmi.hmi_context = glvCreateSurfaceView(
+            g_ctx.display.hmi.glv_hmi_window, NC_MP_MAP_MAIN, &g_ctx.display.hmi.hmi_SurfaceViewEventFunc);
+
+        glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_FLICK_TIMER_ID, GLV_TIMER_REPEAT, 50);
+        glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_LONG_PRESS_TIMER_ID, GLV_TIMER_ONLY_ONCE, 700);
+
+        glvOnReDraw(g_ctx.display.map_context);
+
+        pthread_create(&map->p, NULL, glvEventLoop_, g_ctx.display.glvDisplay);
+
+        map->views.push_back(newInstance);
+    }
+    else
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return 0;
+    }
+
+    return handle;
 }
+
 
 void Mapviewer::ReleaseMapViewInstance(
     const uint32_t& sessionHandle,
     const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_INFO("Release instance view %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map != g_ctx.display.MapviewerSessionList.end())
+    {
+        //retrieveMapviewInstanceIt
+        std::vector<struct MapviewInstance>::iterator itt = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+        if (itt != map->views.end())
+        {
+            // TODO: actually delete MapviewInstance
+            if (g_ctx.display.glv_map_window)
+            {
+                glvDestroyNativeWindow(g_ctx.display.glv_map_window);
+                g_ctx.display.glv_map_window = NULL;
+            }
+            if (g_ctx.display.hmi.glv_hmi_window)
+            {
+                glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
+                g_ctx.display.hmi.glv_hmi_window = NULL;
+            }
+    
+            map->views.erase(itt);
+            TRACE_DEBUG("delete done.");
+        }
+        else
+        {
+            TRACE_ERROR("No MapviewInstance %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        }
+
+        // TODO: for now, we only support 1 view per session
+        map->lastViewInstance = 0;
+    }
+    else
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+    }
 }
 
 int32_t Mapviewer::GetMapViewType(
@@ -232,27 +342,83 @@ void Mapviewer::SetTargetPoint(
 
 void Mapviewer::SetFollowCarMode(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const bool& followCarMode)
 {
-    // TODO
+    TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", followCarMode %d", mapViewInstanceHandle, sessionHandle, followCarMode);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return;
+    }
+
+    NC_MP_SetMapMoveWithCar(map->handle, followCarMode);
 }
 
 bool Mapviewer::GetFollowCarMode(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    uint32_t sessionHandle = NC_MP_MAP_MAIN; // TODO: replace by the currently used map
+
+    TRACE_INFO("view %" PRIu32, mapViewInstanceHandle);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return 0;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return 0;
+    }
+
+    return NC_MP_GetMapMoveWithCar(map->handle);
 }
 
 void Mapviewer::SetCameraPosition(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< double, double, double >& position)
 {
-    // TODO
+    // TODO: difficult. How to retrieve current camera position ?
+    // Use NC_MP_MoveMapDir and NC_MP_ScreenToGeoCode
 }
 
 ::DBus::Struct< double, double, double > Mapviewer::GetCameraPosition(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    // TODO: difficult. How to retrieve current camera position ?
+    // Use NC_MP_MoveMapDir and NC_MP_ScreenToGeoCode
 }
 
 void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& heading)
 {
-    // TODO
+    TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", heading %" PRIu32, mapViewInstanceHandle, sessionHandle, heading);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return;
+    }
+
+    g_ctx.display.hmi.compass = 0;
+    NC_MP_SetMapDispMode(map->handle, g_ctx.display.hmi.compass);
+    NC_MP_SetMapRotate(map->handle, heading);
+
+    glvOnReDraw(g_ctx.display.map_context);
 }
 
 void Mapviewer::SetCameraHeadingToTarget(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< double, double >& target)
@@ -262,7 +428,27 @@ void Mapviewer::SetCameraHeadingToTarget(const uint32_t& sessionHandle, const ui
 
 void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_INFO("view %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return;
+    }
+
+    g_ctx.display.hmi.compass = 1;
+    NC_MP_SetMapDispMode(map->handle, g_ctx.display.hmi.compass);
+    NC_MP_SetMapRotate(map->handle, 0);
+
+    glvOnReDraw(g_ctx.display.map_context);
 }
 
 void Mapviewer::GetCameraHeading(const uint32_t& mapViewInstanceHandle, int32_t& headingType, int32_t& headingAngle, ::DBus::Struct< double, double >& target)
@@ -365,14 +551,48 @@ std::vector< int32_t > Mapviewer::GetSupportedMapViewObjectVisibilities(const ui
     // TODO
 }
 
+#define METER 0x0032 // TODO: why were the XML constants not generated ?
 std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > Mapviewer::GetScaleList(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > ret;
+    for (int i=0; i<=g_ctx.display.hmi.map_max_scale; i++)
+    {
+        ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > newVal;
+        newVal._1 = newVal._2 = i;
+        newVal._3 = METER; // TODO: dummy value
+        newVal._4 = 1000;  // TODO: dummy value
+        ret.push_back(newVal);
+    }
+
+    return ret;
 }
 
 void Mapviewer::SetMapViewScale(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const uint16_t& scaleID)
 {
-    // TODO
+    TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", scaleID %" PRIu16, mapViewInstanceHandle, sessionHandle, scaleID);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return;
+    }
+
+    if (scaleID > g_ctx.display.hmi.map_max_scale)
+        g_ctx.main_window_mapScale = g_ctx.display.hmi.map_max_scale;
+    else if (scaleID < 0)
+        g_ctx.main_window_mapScale = 0;
+    else
+        g_ctx.main_window_mapScale = scaleID;
+
+    NC_MP_SetMapScaleLevel(map->handle, g_ctx.main_window_mapScale);
 }
 
 void Mapviewer::SetMapViewScaleByDelta(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int16_t& scaleDelta)
@@ -385,9 +605,37 @@ void Mapviewer::SetMapViewScaleByMetersPerPixel(const uint32_t& sessionHandle, c
     // TODO
 }
 
+
+#define MIN 0x0040 // TODO: why were the XML constants not generated ?
+#define MID 0x0041 // TODO: why were the XML constants not generated ?
+#define MAX 0x0042 // TODO: why were the XML constants not generated ?
 void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& scaleID, int32_t& isMinMax)
 {
-    // TODO
+    uint32_t sessionHandle = NC_MP_MAP_MAIN; // TODO: replace by the currently used map
+
+    TRACE_INFO("view %" PRIu32 "in currently used map", mapViewInstanceHandle);
+
+    std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
+    if (map == g_ctx.display.MapviewerSessionList.end())
+    {
+        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
+        return;
+    }
+
+    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
+    if (it == map->views.end())
+    {
+        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
+        return;
+    }
+
+    scaleID = NC_MP_GetMapScaleLevel(map->handle);
+
+    if (g_ctx.main_window_mapScale != scaleID) TRACE_ERROR(" ");
+
+    if (scaleID == 0) isMinMax = MIN;
+    else if (scaleID == g_ctx.display.hmi.map_max_scale) isMinMax = MAX;
+    else isMinMax = MID;
 }
 
 void Mapviewer::SetMapViewBoundingBox(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< ::DBus::Struct< double, double >, ::DBus::Struct< double, double > >& boundingBox)
