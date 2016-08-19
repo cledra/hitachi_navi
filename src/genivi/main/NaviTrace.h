@@ -13,10 +13,10 @@
 #define NONE    "\033[0m"
 
 
-#define TRACE_DEBUG(fmt, args...) fprintf(stderr, "[%s:%d] " CYAN "DEBUG" NONE "\033[0m: " fmt "\n", __func__, __LINE__, ##args);
-#define TRACE_INFO(fmt, args...)  fprintf(stderr, "[%s:%d] " GREEN "INFO" NONE ":  " fmt "\n", __func__, __LINE__, ##args);
-#define TRACE_WARN(fmt, args...)  fprintf(stderr, "[%s:%d] " YELLOW "WARN"  NONE":  " fmt "\n", __func__, __LINE__, ##args);
-#define TRACE_ERROR(fmt, args...) fprintf(stderr, "[%s:%d] " RED "ERROR" NONE ": " fmt "\n", __func__, __LINE__, ##args);
+#define TRACE_DEBUG(fmt, args...) do { fprintf(stderr, "[%s:%d] " CYAN "DEBUG" NONE "\033[0m: " fmt "\n", __func__, __LINE__, ##args); } while(0)
+#define TRACE_INFO(fmt, args...)  do { fprintf(stderr, "[%s:%d] " GREEN "INFO" NONE ":  " fmt "\n", __func__, __LINE__, ##args); } while(0)
+#define TRACE_WARN(fmt, args...)  do { fprintf(stderr, "[%s:%d] " YELLOW "WARN"  NONE":  " fmt "\n", __func__, __LINE__, ##args); } while(0)
+#define TRACE_ERROR(fmt, args...) do { fprintf(stderr, "[%s:%d] " RED "ERROR" NONE ": " fmt "\n", __func__, __LINE__, ##args); } while(0)
 
 /*
 #define TRACE_DEBUG(fmt, args...)

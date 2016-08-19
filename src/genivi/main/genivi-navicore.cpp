@@ -3,147 +3,65 @@
 #include <string>
 #include <tuple>
 #include "genivi-navicore.h"
+#include "genivi-navicore-constants.h"
 #include "NaviTrace.h"
-#include "navi_genivi.h"
-#include "route.h"
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-extern "C" {
-    #include "font.h"
-    #include "png.h"
+extern "C" { // CDR
+    #include "glview.h"
+    #include "navicore.h"
+    //#include "navi.h"
 }
 
-// TODO: put in a session handle
-GLVWindow	glv_hmi_window;
+#include "navi.h"
+#include "navi_genivi.h"
+#include "Route.hpp"
 
-extern NaviContext g_ctx;
-extern void sample_hmi_draw_compass(FLOAT rotate); // TODO: move this to button.cpp
-extern int sample_hmi_button_down(int pointer_sx,int pointer_sy);  // TODO: move this to button.cpp
-extern int sample_hmi_button_up(int pointer_sx,int pointer_sy);  // TODO: move this to button.cpp
+extern Navicore  *naviCore;
+extern int resolution;
+extern int region;
+extern char *dpyName;
+extern int WinWidth;
+extern int WinHeight;
+extern char navi_config_path[];
+extern char navi_config_map_db_path[];
+extern char navi_config_user_data_path[];
+extern char navi_config_map_udi_data_path[];
+extern char navi_config_map_udi_info_file[];
+extern char navi_config_map_font_file[];
+extern SMMAPDYNUDI demo_icon_info[];
+extern unsigned char demo_disp_info[];
+extern GLVDisplay glvDisplay;
 
-static INT32 BitmapFontCallBack(NCBITMAPFONTINFO* pInfo)
+
+Navicore::Navicore( DBus::Connection &connection )
+    : DBus::ObjectAdaptor(connection, "/org/genivi/navicore"),
+      lastSession(0),lastRoute(0),client(""),IsSimulationMode(false),
+      SimulationStatus(SIMULATION_STATUS_NO_SIMULATION)
 {
-	int result = 0;
-
-	initializeBitmapFont();
-	setColor(pInfo->color);
-	setOutLineColor(pInfo->outLineColor);
-	setBkgdColor(pInfo->bkgdColor);
-
-	result = createBitmapFont(
-			pInfo->str, pInfo->fontSize, pInfo->outLineFlg,
-			&pInfo->pBitMap,
-			&pInfo->width, &pInfo->height,
-			&pInfo->strWidth, &pInfo->strHeight,
-			pInfo->rotation, true);
-
-	if (result != 0) {
-		return (0);
-	}
-	return (1);
 }
 
-static INT32 ReadImageForFileCallBack(NCBITMAPINFO* pInfo)
+::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::SessionGetVersion()
 {
-	pInfo->pBitMap = (UChar *)readPngData(pInfo->path, &pInfo->width, &pInfo->height);
-	if (NULL == pInfo->pBitMap) {
-		return (0);
-	}
-	return (1);
+    ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
+    version._1 = 3;
+    version._2 = 0;
+    version._3 = 0;
+    version._4 = std::string("22-01-2014");
+    return version;
 }
 
-static INT32 SetImageForMemoryCallBack(NCBITMAPINFO* pInfo)
+uint32_t Navicore::CreateSession_internal(void)
 {
-	pInfo->pBitMap = (UChar *)setPngData(pInfo->image, pInfo->dataSize, &pInfo->width, &pInfo->height);
-	if (NULL == pInfo->pBitMap) {
-		return 0;
-	}
-	return 1;
-}
-
-static void sample_hmi_request_update(void) /* TODO: Fix this, this is crapy dirty */
-{
-    g_ctx.display.hmi.sample_hmi_request_update();
-}
-
-static INT32 MapDrawEndCallBack(NCDRAWENDINFO* pInfo)
-{
-	sample_hmi_draw_compass(pInfo->rotate);
-	sample_hmi_request_update();
-	return 1;
-}
-
-static int sample_hmi_keyboard_handle_key(
-                    unsigned int key,
-                    unsigned int state)
-{
-	if(g_ctx.display.map_context == 0) {
-		return 0;
-	}
-    
-    TRACE_INFO("Key is %d, state is %d", key, state);
-    if(state == GLV_KEYBOARD_KEY_STATE_PRESSED) {
-    	switch(key) {
-    	case 103:		// '↑'
-		   if(g_ctx.main_window_mapScale < g_ctx.display.hmi.map_max_scale){
-			   g_ctx.main_window_mapScale++;
-				   if (g_ctx.main_window_mapScale == 1) {
-					   g_ctx.main_window_mapScale++;
-				   }
-				   if(g_ctx.main_window_mapScale > g_ctx.display.hmi.map_max_scale)
-                        g_ctx.main_window_mapScale = g_ctx.display.hmi.map_max_scale;
-				  NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale);
-				  glvOnReDraw(g_ctx.display.map_context);
-		   }
-			break;
-		case 108:		// '↓'
-     	   if(g_ctx.main_window_mapScale > 0){
-     		   g_ctx.main_window_mapScale--;
-				   if (g_ctx.main_window_mapScale == 1) {
-					   g_ctx.main_window_mapScale--;
-				   }
-				   if(g_ctx.main_window_mapScale < 0)
-                       g_ctx.main_window_mapScale = 0;
-				  NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale);
-				  glvOnReDraw(g_ctx.display.map_context);
-     	   }
-     	   break;
-		case 25:		// 'p'
-			// route search
-            // Add for Genivi:  make sure a single road exists; if not create it
-            if (g_ctx.lastRoute == 0)
-            {
-                g_ctx.lastRoute++;
-                TRACE_INFO("Create route %" PRIu32, g_ctx.lastRoute);
-                Route newRoute(g_ctx.lastRoute);
-                g_ctx.routes.push_back(newRoute);
-            }
-            sample_calc_demo_route(g_ctx.display, g_ctx.routes[0]);
-			break;
-		case 30:		// 'a'
-			// own posi mode
-			NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);
-			glvOnReDraw(g_ctx.display.map_context);
-			break;
-    	}
-    }
-    return(0);
-}
-
-static int internal_create_session(NaviContext *ctx)
-{
-    //GLVDisplay	glv_dpy;
-	//GLVWindow	glv_map_window;
-	//GLVWindow	glv_hmi_window;
 	int rc;
 
-	ctx->naviStartUpResolution(); 
-	ctx->naviStartUpRegion();
+	naviStartUpResolution(resolution); 
+	naviStartUpRegion(region);
 
-	ctx->display.glvDisplay = glvOpenDisplay((char*)ctx->display.name.c_str());
-	if(!ctx->display.glvDisplay){
+	glvDisplay = glvOpenDisplay(dpyName);
+	if(!glvDisplay){
 		TRACE_ERROR("glvOpenDisplay() failed");
 		return -1;
 	}
@@ -153,12 +71,12 @@ static int internal_create_session(NaviContext *ctx)
 	NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);
 	NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);
 
-	rc = NC_Initialize(g_ctx.WinWidth, g_ctx.WinHeight,
-            g_ctx.navi_config_user_data_path.c_str(), g_ctx.navi_config_map_db_path.c_str(), "locatorPath");
+	rc = NC_Initialize(WinWidth, WinHeight,
+            navi_config_user_data_path, navi_config_map_db_path, "locatorPath");
 	if(NC_SUCCESS != rc){
 		TRACE_ERROR("NC_Initialize error");
-		TRACE_ERROR("\ttuser data path: %s", ctx->navi_config_user_data_path.c_str());
-		TRACE_ERROR("\tmap db path: %s", ctx->navi_config_map_db_path.c_str());
+		TRACE_ERROR("\ttuser data path: %s", navi_config_user_data_path);
+		TRACE_ERROR("\tmap db path: %s", navi_config_map_db_path);
 		return -1;
 	}
 
@@ -198,33 +116,22 @@ static int internal_create_session(NaviContext *ctx)
     return 0;
 }
 
-Navicore::Navicore( DBus::Connection &connection )
-    : DBus::ObjectAdaptor(connection, "/org/genivi/navicore"),
-      lastSession(0)
-{
-}
-
-::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > Navicore::SessionGetVersion()
-{
-    ::DBus::Struct<uint16_t, uint16_t, uint16_t, std::string> version;
-    version._1 = 3;
-    version._2 = 0;
-    version._3 = 0;
-    version._4 = std::string("22-01-2014");
-    return version;
-}
-
 uint32_t Navicore::CreateSession(const std::string& client)
 {
-    if (lastSession == 0) // we only handle 1 session for now
+    if (lastSession != 0) // we only handle 1 session for now
     {
-        if (internal_create_session(&g_ctx) < 0) // error
-        {
-            TRACE_ERROR("fail to create session (%s)", client.c_str());
-            return 0;
-        }
-        else lastSession++;
+        TRACE_ERROR(" ");
+        return 0;
     }
+
+    if (CreateSession_internal(/*&g_ctx*/) < 0) // error
+    {
+        TRACE_ERROR("fail to create session (%s)", client.c_str());
+        return 0;
+    }
+
+    lastSession++;
+    this->client = client;
     
     TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
     return lastSession;
@@ -232,26 +139,29 @@ uint32_t Navicore::CreateSession(const std::string& client)
 
 void Navicore::DeleteSession(const uint32_t& sessionHandle)
 {
-    if (sessionHandle == lastSession) // we only handle 1 session for now
+    if (sessionHandle != lastSession) // we only handle 1 session for now
     {
-        //TODO: delete Mapviewer if it's not already done
-        /*if (g_ctx.display.glv_map_window)
-        {
-            glvDestroyNativeWindow(g_ctx.display.glv_map_window);
-            g_ctx.display.glv_map_window = NULL;
-        }
-        if (g_ctx.display.hmi.glv_hmi_window)
-        {
-            glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
-            g_ctx.display.hmi.glv_hmi_window = NULL;
-        }*/
-        NC_Finalize();
-        glvCloseDisplay(g_ctx.display.glvDisplay);
-        g_ctx.display.glvDisplay = NULL;
-
-        lastSession = 0;
+        TRACE_ERROR(" ");
+        return;
     }
 
+    //TODO: delete Mapviewer if it's not already done
+    /*if (g_ctx.display.glv_map_window)
+    {
+        glvDestroyNativeWindow(g_ctx.display.glv_map_window);
+        g_ctx.display.glv_map_window = NULL;
+    }
+    if (g_ctx.display.hmi.glv_hmi_window)
+    {
+        glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
+        g_ctx.display.hmi.glv_hmi_window = NULL;
+    }*/
+    TRACE_DEBUG("calling NC_Finalize()");
+    NC_Finalize();
+    glvCloseDisplay(glvDisplay);
+    glvDisplay = NULL;
+
+    lastSession = 0;
     TRACE_INFO("SESSION ADAPTOR - Deleted session %d\n", sessionHandle);
 }
 
@@ -265,11 +175,9 @@ int32_t Navicore::GetSessionStatus(const uint32_t& sessionHandle)
 std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions()
 {
     std::vector< ::DBus::Struct< uint32_t, std::string > > list;
-    ::DBus::Struct< uint32_t, std::string > a,b;
-    a._1 = 1; a._2 = std::string("Session 1");
-    b._1 = 2; b._2 = std::string("Session b");
-    list.push_back( a );
-    list.push_back( b );
+    ::DBus::Struct< uint32_t, std::string > a;
+    a._1 = lastSession; a._2 = client;
+    list.push_back(a);
     return list;
 }
 
@@ -283,44 +191,24 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions(
     return version;
 }
 
-/* TODO: move this */
-void HmiContext::set_flag_visible(HMI_FLAG_INDEX_e flag, Bool visible,
-    double lat, double lon, Bool commit)
-{
-    /* start flag, dest flag and pin flag: */
-    static const int icon_id[] = { 21, 22, 3 };
-
-    demo_icon_info[flag].IconID = icon_id[flag];
-    demo_icon_info[flag].Latitude		= (INT32)(lat*1024.0*3600.0);
-    demo_icon_info[flag].Longititude	= (INT32)(lon*1024.0*3600.0);
-    demo_disp_info[flag] = visible ? 1 : 0;
-
-    if (commit)
-    {
-        NC_DM_SetIconInfo(demo_icon_info, 3);
-        NC_DM_SetDynamicUDIDisplay(demo_disp_info, 3);
-    }
-}
-
-
-std::vector<Route>::iterator NaviContext::retrieveRouteIt(const uint32_t& routeHandle)
+std::vector<Route>::iterator Navicore::retrieveRouteIt(const uint32_t& routeHandle)
 {
     std::vector<Route>::iterator it;
-    for (it = routes.begin(); it != routes.end(); it++)
+    for (it = Routes.begin(); it != Routes.end(); it++)
     {
         if (it->handle == routeHandle) return it;
     }
-    return routes.end();
+    return Routes.end();
 }
 
 uint32_t Navicore::CreateRoute(const uint32_t& sessionHandle)
 {
-    if (g_ctx.lastRoute != 0) return 0; // we only manage 1 route for now
+    if (lastRoute != 0) return 0; // we only manage 1 route for now
 
-    g_ctx.lastRoute++;
-    TRACE_INFO("Create route %" PRIu32 " for session %" PRIu32, g_ctx.lastRoute, sessionHandle)
-    Route newRoute(g_ctx.lastRoute);
-    g_ctx.routes.push_back(newRoute);
+    lastRoute++;
+    TRACE_INFO("Create route %" PRIu32 " for session %" PRIu32, lastRoute, sessionHandle);
+    Route newRoute(lastRoute);
+    Routes.push_back(newRoute);
     return newRoute.handle;
 }
 
@@ -328,14 +216,15 @@ void Navicore::DeleteRoute(const uint32_t& sessionHandle, const uint32_t& routeH
 {
     TRACE_INFO("Delete route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
-    // TODO: use sessionHandle instead of g_ctx
-    std::vector<Route>::iterator it = g_ctx.retrieveRouteIt(routeHandle);
+    std::vector<Route>::iterator it = retrieveRouteIt(routeHandle);
     
-    if (it != g_ctx.routes.end())
+    if (it != Routes.end())
     {
         // TODO: actually delete route
-        g_ctx.routes.erase(it);
-        g_ctx.lastRoute = 0; // we only manage 1 route for now
+        Routes.erase(it);
+        //NC_RP_DeleteRouteResult();
+        // TODO: stop guidance if any
+        lastRoute = 0; // we only manage 1 route for now
     }
     else
     {
@@ -431,12 +320,24 @@ std::vector< std::vector< ::DBus::Struct< double, double > > > Navicore::GetExcl
     TRACE_WARN("TODO: implement this function");
 }
 
-/* TODO: why aren't XML constants also generated ?*/
-#define LATITUDE        160
-#define LONGITUDE       161
-#define ALTITUDE        162
-#define LOCATION_INPUT  17
-#define WAYPOINT_TYPE   289
+void Navicore::SetIconVisibility(IconIndex index, bool visible,
+    double lat, double lon, bool commit)
+{
+    /* start flag, dest flag and pin flag: */
+    static const int icon_id[] =
+        { IconNum::FLAG_START_NUM, IconNum::FLAG_DEST_NUM, IconNum::FLAG_PIN_NUM };
+
+    demo_icon_info[index].IconID = icon_id[index];
+    demo_icon_info[index].Latitude		= (INT32)(lat*1024.0*3600.0);
+    demo_icon_info[index].Longititude	= (INT32)(lon*1024.0*3600.0);
+    demo_disp_info[index] = visible ? 1 : 0;
+
+    if (commit)
+    {
+        NC_DM_SetIconInfo(demo_icon_info, 3);
+        NC_DM_SetDynamicUDIDisplay(demo_disp_info, 3);
+    }
+}
 
 void Navicore::SetWaypoints(
     const uint32_t& sessionHandle,
@@ -451,17 +352,17 @@ void Navicore::SetWaypoints(
 
     TRACE_INFO("route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
-    if (sessionHandle != 1) return; // we only handle 1 session for now
+    if (sessionHandle != lastSession) return; // we only handle 1 session for now
 
-    std::vector<struct Route>::iterator route = g_ctx.retrieveRouteIt(routeHandle);
-    if (route == g_ctx.routes.end())
+    std::vector<struct Route>::iterator route = retrieveRouteIt(routeHandle);
+    if (route == Routes.end())
     {
         TRACE_ERROR("No Route %" PRIu32 "in session 1", routeHandle);
         return ;
     }
 
     /* mask Pin flag: */
-    g_ctx.display.hmi.set_flag_visible(PIN_FLAG, false);
+    SetIconVisibility(FLAG_PIN_IDX, false);
 
     size = waypointsList.size();
     if (startFromCurrentPosition) size++;
@@ -497,7 +398,7 @@ void Navicore::SetWaypoints(
             demo_icon_info[START_FLAG].Longititude	= (INT32)carState.coord.longitude;
             demo_icon_info[START_FLAG].Latitude		= (INT32)carState.coord.latitude;
             demo_disp_info[START_FLAG] = 1;*/
-            g_ctx.display.hmi.set_flag_visible(START_FLAG, true, newLat, newLon);
+            SetIconVisibility(FLAG_START_IDX, true, newLat, newLon);
             /* --- */
         }
         else
@@ -512,9 +413,9 @@ void Navicore::SetWaypoints(
         std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >::const_iterator map;
         for (map = (*wp_map).begin(); map != (*wp_map).end(); map++)
         {
-            if ((*map).first == LATITUDE)
+            if ((*map).first == NAVICORE_LATITUDE)
                 newLat = (*map).second._2.reader().get_double();
-            else if ((*map).first == LONGITUDE)
+            else if ((*map).first == NAVICORE_LONGITUDE)
                 newLon = (*map).second._2.reader().get_double();
         }
 
@@ -537,7 +438,7 @@ void Navicore::SetWaypoints(
             demo_icon_info[START_FLAG].Latitude		= (INT32)(newLat*1024.0*3600.0);
             demo_icon_info[START_FLAG].Longititude	= (INT32)(newLon*1024.0*3600.0);
             demo_disp_info[START_FLAG] = 1;*/
-            g_ctx.display.hmi.set_flag_visible(START_FLAG, true, newLat, newLon);
+            SetIconVisibility(FLAG_START_IDX, true, newLat, newLon);
         }
         else if (index == (size-1))
         {
@@ -547,7 +448,7 @@ void Navicore::SetWaypoints(
             demo_icon_info[DEST_FLAG].Latitude		= (INT32)(newLat*1024.0*3600.0);
             demo_icon_info[DEST_FLAG].Longititude	= (INT32)(newLon*1024.0*3600.0);
             demo_disp_info[DEST_FLAG] = 1;*/
-            g_ctx.display.hmi.set_flag_visible(DEST_FLAG, true, newLat, newLon, true);
+            SetIconVisibility(FLAG_DEST_IDX, true, newLat, newLon, true);
         }
         else
         {
@@ -560,8 +461,8 @@ void Navicore::SetWaypoints(
 
     NC_RP_PlanSingleRoute(&NcPointsTab[0], size);
 
-    g_ctx.display.hmi.set_pin = 0;
-	g_ctx.display.sample_hmi_request_mapDraw();
+    sample_hmi_set_pin_mode(0);
+	sample_hmi_request_mapDraw();
 }
 
 void Navicore::GetWaypoints(
@@ -622,7 +523,7 @@ std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > Navicore::GetRou
 std::vector< uint32_t > Navicore::GetAllRoutes()
 {
     std::vector<uint32_t> ret;
-    for (std::vector<Route>::iterator it=g_ctx.routes.begin(); it != g_ctx.routes.end(); it++)
+    for (std::vector<Route>::iterator it=Routes.begin(); it != Routes.end(); it++)
     {
         ret.push_back((*it).handle);
     }
@@ -655,12 +556,30 @@ std::vector< ::DBus::Struct< uint32_t, uint32_t > > Navicore::GetBlockedRouteStr
 
 void Navicore::SetSimulationMode(const uint32_t& sessionHandle, const bool& activate)
 {
-    TRACE_WARN("TODO: implement this function");
+    TRACE_INFO("activate = %d (%d)", activate, IsSimulationMode);
+    if (sessionHandle != lastSession) return;
+
+    if (activate == IsSimulationMode) return; // nothing to do
+
+    if (!activate && SimulationStatus != SIMULATION_STATUS_NO_SIMULATION)
+    {
+        TRACE_DEBUG("calling sample_guide_request_end");
+        sample_guide_request_end();
+        SimulationStatus = SIMULATION_STATUS_NO_SIMULATION;
+    }
+    else if (activate)
+    {
+        SimulationStatus = SIMULATION_STATUS_FIXED_POSITION;
+    }
+
+    IsSimulationMode = activate;
+    TRACE_DEBUG("new state: %d, %d", IsSimulationMode, (int)SimulationStatus);
 }
 
 int32_t Navicore::GetSimulationStatus()
 {
-    TRACE_WARN("TODO: implement this function");
+    TRACE_INFO("SimulationStatus: %d", (int)SimulationStatus);
+    return SimulationStatus;
 }
 
 void Navicore::AddSimulationStatusListener()
@@ -695,7 +614,17 @@ void Navicore::RemoveSimulationSpeedListener()
 
 void Navicore::StartSimulation(const uint32_t& sessionHandle)
 {
-    TRACE_WARN("TODO: implement this function");
+    TRACE_INFO("current status: %d, %d", IsSimulationMode, (int)SimulationStatus);
+    if (sessionHandle != lastSession) return;
+
+    if (!IsSimulationMode) return; // activate simulation first
+    else if (SimulationStatus == SIMULATION_STATUS_RUNNING) return; // nothing to do
+
+    TRACE_DEBUG("calling sample_guide_request_start");
+    sample_guide_request_start();
+    SimulationStatus = SIMULATION_STATUS_RUNNING;
+
+    TRACE_DEBUG("new state: %d, %d", IsSimulationMode, (int)SimulationStatus);
 }
 
 void Navicore::PauseSimulation(const uint32_t& sessionHandle)

@@ -4,6 +4,12 @@
 #include <dbus-c++/dbus.h>
 #include "genivi-navigationcore-adaptor.h"
 
+#include "Route.hpp"
+
+extern "C" {
+    #include "glview.h"
+}
+
 class Navicore :
     public org::genivi::navigationcore::Session_adaptor,
     public org::genivi::navigationcore::Routing_adaptor,
@@ -14,6 +20,28 @@ class Navicore :
 {
     public:
         Navicore( DBus::Connection &connection );
+
+        enum IconIndex
+        {
+            FLAG_START_IDX = 0,
+            FLAG_DEST_IDX = 1,
+            FLAG_PIN_IDX = 2
+        };
+
+        enum IconNum
+        {
+            FLAG_START_NUM = 21,
+            FLAG_DEST_NUM = 22,
+            FLAG_PIN_NUM = 3
+        };
+
+        enum SimulationStatus
+        {
+            SIMULATION_STATUS_NO_SIMULATION     = 544,
+            SIMULATION_STATUS_RUNNING           = 545,
+            //SIMULATION_STATUS_PAUSED          = 546, /* not supported yet */
+            SIMULATION_STATUS_FIXED_POSITION    = 547
+        };
 
         // Session interface
         ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > SessionGetVersion();
@@ -86,7 +114,17 @@ class Navicore :
         int32_t GetVoiceGuidanceSettings();
 
     private:
-        uint32_t lastSession;
+        uint32_t CreateSession_internal(void);
+        void SetIconVisibility(IconIndex index, bool visible,
+            double lat = 0.0, double lon = 0.0, bool commit = false);
+        std::vector<Route>::iterator retrieveRouteIt(const uint32_t& routeHandle);
+    
+        uint32_t lastSession, lastRoute;
+        std::string client;
+        //GLVDisplay glvDisplay;
+        std::vector<Route> Routes;
+        bool IsSimulationMode;
+        SimulationStatus SimulationStatus;
 };
 
 #endif // GENIVI_NAVICORE_H

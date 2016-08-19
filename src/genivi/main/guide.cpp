@@ -20,15 +20,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "guide.h"
-#include "route.h"
-#include "NaviTrace.h"
+#include "pthread_msq.h"
+#include "pthread_timer.h"
 
-extern "C" {
-    #include "pthread_msq.h"
-    #include "pthread_timer.h"
-    #include "glview.h"
-}
+#include "navicore.h"
+#include "glview.h"
+#include "navi.h"
+#include "NaviTrace.h"
 
 static pthread_msq_id_t guide_queue = PTHREAD_MSQ_ID_INITIALIZER;
 static pthread_t guide_threadId;
@@ -41,17 +39,10 @@ SMREALTIMEGUIDEDATA guide_info;
 #define GUIDE_TIMER_ID			(1)
 #define GUIDE_REPEAT_TIME		(300)
 
-static void *guideThread(void *ctx)
+static void *guideThread(void *no_arg)
 {
 	int	rc = 0;
 	pthread_msq_msg_t	rmsg = {};
-    DisplayContext *displayCtx = (DisplayContext*) ctx;
-
-    if (!ctx)
-    {
-        TRACE_ERROR("No display context provided");
-        return NULL;
-    }
 
 	pthreadCreateTimer(guide_threadId,&guide_queue,GUIDE_ON_TIMER,2000,GUIDE_TIMER_ID,PTHREAD_TIMER_REPEAT,GUIDE_REPEAT_TIME);
 
@@ -86,11 +77,12 @@ static void *guideThread(void *ctx)
 		switch(rmsg.data[0]){
 		case GUIDE_ON_TIMER:
 				// printf("guide timer\n");
+                TRACE_INFO("receive GUIDE_ON_TIMER");
 				if(NC_Simulation_IsInSimu() == 0){
 					pthreadStopTimer(guide_threadId,GUIDE_TIMER_ID);
 					break;
 				}
-				printf("NC_DM_GetCarMoveStatus = %d\n",NC_DM_GetCarMoveStatus());
+				TRACE_DEBUG("NC_DM_GetCarMoveStatus = %d", NC_DM_GetCarMoveStatus());
 #if 0
 				if(SC_DM_GetCarMoveStatus() == 2){
 					/* 到着 */
@@ -122,12 +114,11 @@ static void *guideThread(void *ctx)
 			env->SetLongField(rtGUIDEDATA, fId_SMREALTIMEGUIDEDATA_lPassedDistance, (jlong) guide.passedDistance);
 			env->SetObjectField(rtGUIDEDATA, fId_SMREALTIMEGUIDEDATA_strNextBroadString, jstrBuf);
 #endif
-			//sample_hmi_set_fource_update_mode();
-            displayCtx->hmi.force_update_flag = 1;
-			//sample_hmi_request_mapDraw();
-            displayCtx->sample_hmi_request_mapDraw();
+			sample_hmi_set_fource_update_mode();
+			sample_hmi_request_mapDraw();
 			break;
 		case GUIDE_ON_GUIDE_START:
+            TRACE_INFO("receive GUIDE_ON_GUIDE_START");
 #if 1		/* 誘導が開始しない・・・なぜかわからないけど、おまじない。 */
 			NC_Simulation_StartSimulation();	//	シミュレーションを開始する
 			NC_Guide_StartGuide();				//	経路誘導を開始する
@@ -140,14 +131,14 @@ static void *guideThread(void *ctx)
 			pthreadStartTimer(guide_threadId,GUIDE_TIMER_ID);
 			break;
 		case GUIDE_ON_GUIDE_END:
+            TRACE_INFO("receive GUIDE_ON_GUIDE_START");
 			NC_Guide_StopGuide();				//	経路誘導を終了する
 			NC_Simulation_ExitSimulation();		//	シミュレーションを終了する
 			pthreadStopTimer(guide_threadId,GUIDE_TIMER_ID);
 			NC_RP_DeleteRouteResult();
 			sample_clear_demo_route_icon();		//	デモ用アイコン　スタート、ゴール、誘導ピン　を消す
-			//sample_hmi_set_fource_update_mode();
-            displayCtx->hmi.force_update_flag = 1;
-			displayCtx->sample_hmi_request_mapDraw();
+			sample_hmi_set_fource_update_mode();
+			sample_hmi_request_mapDraw();
 			break;
 		default:
 			break;
@@ -156,7 +147,7 @@ static void *guideThread(void *ctx)
 	return NULL;
 }
 
-void sample_createGuideThread(DisplayContext * ctx)
+void sample_createGuideThread(void)
 {
 	int		pret = 0;
 
@@ -166,11 +157,36 @@ void sample_createGuideThread(DisplayContext * ctx)
 		exit(-1);
 	}
 	// スレッド生成
-	pret = pthread_create(&guide_threadId, NULL, guideThread, ctx);
+	pret = pthread_create(&guide_threadId, NULL, guideThread, NULL);
 
 	if (0 != pret) {
 		printf("createGuideThread:Error: pthread_create() failed\n");
 	}
+}
+
+void sample_destroyGuideThread(void) // CDR
+{
+    void *res;
+
+    TRACE_DEBUG("stop guidance / simu (if any):");
+    sample_guide_request_end();
+
+    TRACE_DEBUG("stop timer:");
+    if (pthreadStopTimer(guide_threadId, GUIDE_TIMER_ID) != PTHREAD_TIMER_OK)
+        TRACE_ERROR("fail to stop timer");
+
+    TRACE_DEBUG("destroy guide thread:");
+    if (pthread_cancel(guide_threadId) != 0)
+        TRACE_ERROR("Fail to cancel thread");
+    else if (pthread_join(guide_threadId, &res) != 0)
+        TRACE_ERROR("Fail to join canceled thread");
+    else if (res == PTHREAD_CANCELED)
+        TRACE_INFO("thread was successfully canceled");
+    else
+        TRACE_ERROR("thread was not properly canceled (%p)", res);
+
+    if (pthread_msq_destroy(&guide_queue) != PTHREAD_MSQ_OK)
+        TRACE_ERROR("Fail to destroy queue");
 }
 
 void sample_guide_request_start(void)

@@ -1,8 +1,11 @@
 #ifndef GENIVI_MAPVIEWER_H
 #define GENIVI_MAPVIEWER_H
 
+#include <pthread.h>
 #include <dbus-c++/dbus.h>
 #include "genivi-mapviewer-adaptor.h"
+
+#include "MapviewInstance.hpp"
 
 class Mapviewer :
     public org::genivi::mapviewer::Session_adaptor,
@@ -107,9 +110,12 @@ class Mapviewer :
         void HideCustomElements(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< uint32_t >& customElementHandles);
         std::map< uint32_t, ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > > GetDisplayedCustomElements(const uint32_t& mapViewInstanceHandle);
         std::vector< ::DBus::Struct< int32_t, ::DBus::Struct< double, double >, ::DBus::Struct< uint8_t, ::DBus::Variant > > > SelectElementsOnMap(const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< uint16_t, uint16_t >& pixelCoordinate, const std::vector< int32_t >& selectableTypes, const uint16_t& maxNumberOfSelectedElements);
-        
+
     private:
-        uint32_t lastSession;
+        uint32_t lastSession, lastViewInstance;
+        MapviewInstance *Mapview;
+        std::string client;
+        pthread_t p;
 };
 
 #endif // GENIVI_MAPVIEWER_H

@@ -16,7 +16,7 @@ void leave_signal_handler(int sig)
     dbusServerLoop(no_arg);
 }*/
 
-void dbusServerLoop(void *no_arg)
+void dbusServerLoop(Navicore **naviCore, Mapviewer **mapViewer)
 {
     signal(SIGTERM, leave_signal_handler);
     signal(SIGINT, leave_signal_handler);
@@ -25,8 +25,10 @@ void dbusServerLoop(void *no_arg)
     DBus::Connection conn = DBus::Connection::SessionBus();
     conn.request_name("org.agl.gpsnavi");
 
-    Navicore naviCore(conn);
-    Mapviewer mapViewer(conn);
+    /*Navicore naviCore(conn);
+    Mapviewer mapViewer(conn);*/
+    *naviCore = new Navicore(conn);
+    *mapViewer = new Mapviewer(conn);
     TRACE_DEBUG("DBus server loop initialized");
 
     dispatcher.enter();
