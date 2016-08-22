@@ -32,6 +32,8 @@ extern GLVContext glv_map_context;
 extern GLVContext glv_hmi_context;
 extern int hmi_compass;
 extern int hmiMAP_MAX_SCALE;
+extern int WinWidth;
+extern int WinHeight;
 
 extern int map_init(GLVContext glv_ctx,int maps);
 extern int map_reshape(GLVContext glv_ctx,int maps,int width, int height);
@@ -264,6 +266,12 @@ uint32_t Mapviewer::CreateMapViewInstance(
         || lastViewInstance != 0) // for now, we only support 1 view per session
     {
         TRACE_ERROR("Fail to create MapViewInstance for session %" PRIu32, sessionHandle);
+        return 0;
+    }
+
+    if (mapViewSize._1 > WinWidth || mapViewSize._2 > WinHeight)
+    {
+        TRACE_ERROR("Incompatible map size (%" PRIu16 ":%" PRIu16 ")", mapViewSize._1, mapViewSize._2);
         return 0;
     }
     

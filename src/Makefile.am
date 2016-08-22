@@ -559,8 +559,7 @@ libnavicore_la_LIBADD = \
         @SQLITE3_LIBS@ \
         @EXPAT_LIBS@
 
-bin_PROGRAMS        = navi navi_genivi
-#bin_PROGRAMS        = navi_genivi
+bin_PROGRAMS        = navi navi_genivi client_genivi
 
 navi_SOURCES = \
 sms/sms-core/include/navicore.h \
@@ -630,6 +629,9 @@ main/HMI_Icon.h \
 main/image.h \
 LICENSE \
 COPYING
+
+client_genivi_SOURCES = \
+genivi/client/navi_client.cpp
 
 navi_CPPFLAGS = \
         -I$(top_srcdir)/src/sms \
@@ -720,6 +722,13 @@ navi_genivi_LDADD = \
         @DBUSCXX_LIBS@
 
 #
+#client_genivi_CPPFLAGS = -I$(top_srcdir)/src/genivi/client
+
+client_genivi_CXXFLAGS = -fPIC -std=c++11 -g \
+        @DBUSCXX_CFLAGS@
+
+client_genivi_LDADD = \
+        @DBUSCXX_LIBS@
 
 naviincludedir = $(includedir)/NC
 naviinclude_HEADERS =	\
