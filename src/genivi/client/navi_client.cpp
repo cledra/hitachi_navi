@@ -7,6 +7,7 @@
 #include "mapviewer.h"
 #include "../main/NaviTrace.h"
 #include "../main/genivi-mapviewer-constants.h"
+#include "../main/genivi-navicore-constants.h"
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -36,7 +37,6 @@ int main(int argc, char * argv[])
 
     while ((opt = getopt_long(argc, argv, "w:h:", long_options, NULL)) != -1)
     {
-        opt = getopt_long(argc, argv, "w:h:", long_options, NULL);
         switch (opt)
         {
             case 'w':
@@ -60,42 +60,66 @@ int main(int argc, char * argv[])
     navicoreSession = navicore.CreateSession(std::string("AW-navicore"));
     TRACE_INFO("navicore.CreateSession() --> %" PRIu32, navicoreSession);
 
-    sleep(2);
-
     mapViewerSession = mapviewer.CreateSession(std::string("AW-mapviewer"));
     TRACE_INFO("mapviewer.CreateSession() --> %" PRIu32, mapViewerSession);
-
-    sleep(2);
 
     mapViewInstance = mapviewer.CreateMapViewInstance(mapViewerSession, resolution, MAPVIEWER_MAIN_MAP);
     TRACE_INFO("mapviewer.CreateMapViewInstance(%" PRIu16 ":%" PRIu16 ") --> %" PRIu32,
         resolution._1, resolution._2, mapViewInstance);
 
+    uint32_t route = navicore.CreateRoute(navicoreSession);
+    TRACE_INFO("CreateRoute %" PRIu32 " -> %" PRIu32, navicoreSession, route);
     sleep(2);
 
-    //sleep(10);
-    TRACE_INFO("GetFollowCarMode: %d", mapviewer.GetFollowCarMode(mapViewInstance));
-    mapviewer.SetFollowCarMode(mapViewerSession, mapViewInstance, false);
-    TRACE_INFO("GetFollowCarMode: %d", mapviewer.GetFollowCarMode(mapViewInstance));
-    mapviewer.SetFollowCarMode(mapViewerSession, mapViewInstance, true);
+    std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > wpList;
+    std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > point1;
+    ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lat;
+    ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lon;
+    
+    /*point1Lat._1 = NAVICORE_LATITUDE;
+    point1Lat._2.writer().append_double(35.590429959);
+    point1Lon._1 = NAVICORE_LONGITUDE;
+    point1Lon._2.writer().append_double(139.730397407);*/
+    
+    /*point1Lat._1 = NAVICORE_LATITUDE;
+    point1Lat._2.writer().append_double(35.588711209);
+    point1Lon._1 = NAVICORE_LONGITUDE;
+    point1Lon._2.writer().append_double(139.728857693);*/
+    
+    point1Lat._1 = NAVICORE_LATITUDE;
+    point1Lat._2.writer().append_double(35.594820421);
+    point1Lon._1 = NAVICORE_LONGITUDE;
+    point1Lon._2.writer().append_double(139.720988227);
+    
+    point1[NAVICORE_LATITUDE] = point1Lat;
+    point1[NAVICORE_LONGITUDE] = point1Lon;
+    wpList.push_back(point1);
 
+    TRACE_INFO("SetWaypoints (start from current position + 1 point)");
+    navicore.SetWaypoints(navicoreSession, route, true, wpList);
     sleep(2);
-    TRACE_INFO("SetCameraHeadingAngle 90");
-    mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 90);
 
+    TRACE_INFO("SetSimulationMode true");
+    navicore.SetSimulationMode(navicoreSession, true);
     sleep(2);
-    TRACE_INFO("SetCameraHeadingAngle 180");
-    mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 180);
 
+    TRACE_INFO("StartSimulation");
+    navicore.StartSimulation(navicoreSession);
     sleep(2);
-    TRACE_INFO("SetCameraHeadingAngle 270");
-    mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 270);
 
-    sleep(2);
-    TRACE_INFO("SetCameraHeadingAngle 0");
+    TRACE_INFO("GetSimulationStatus : %" PRIu32, navicore.GetSimulationStatus());
+
+    sleep(10);
+
+    /*TRACE_INFO("SetCameraHeadingTrackUp");
+    mapviewer.SetCameraHeadingTrackUp(mapViewerSession, mapViewInstance);
+
+    sleep(10);*/
+
+    TRACE_INFO("SetCameraHeadingAngle");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 0);
+    sleep(10);
 
-    sleep(2);
     std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > scaleList;
     std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > >::iterator it;
     scaleList = mapviewer.GetScaleList(mapViewInstance);
@@ -130,18 +154,32 @@ int main(int argc, char * argv[])
     sleep(2);
     TRACE_INFO("setting zoom %" PRIu16, scaleList[old_scale]._1);
     mapviewer.SetMapViewScale(mapViewerSession, mapViewInstance, scaleList[old_scale]._1);
-
     sleep(2);
+
+    mapviewer.SetFollowCarMode(mapViewerSession, mapViewInstance, false);
+    TRACE_INFO("GetFollowCarMode: %d", mapviewer.GetFollowCarMode(mapViewInstance));
+    sleep(10);
+    mapviewer.SetFollowCarMode(mapViewerSession, mapViewInstance, true);
+    TRACE_INFO("GetFollowCarMode: %d", mapviewer.GetFollowCarMode(mapViewInstance));
+    sleep(10);
+
+    TRACE_INFO("PauseSimulation");
+    navicore.PauseSimulation(navicoreSession);
+    sleep(2);
+
+    TRACE_INFO("SetSimulationMode false");
+    navicore.SetSimulationMode(navicoreSession, false);
+    sleep(2);
+
+    TRACE_INFO("DeleteRoute %" PRIu32 ", %" PRIu32, navicoreSession, route);
+    navicore.DeleteRoute(navicoreSession, route);
 
     TRACE_INFO("calling ReleaseMapViewInstance");
     mapviewer.ReleaseMapViewInstance(mapViewerSession, mapViewInstance);
-    sleep(2);
     TRACE_INFO("calling DeleteSession (mapViewer)");
     mapviewer.DeleteSession(mapViewerSession);
-    sleep(2);
     TRACE_INFO("calling DeleteSession (navicore)");
     navicore.DeleteSession(navicoreSession);
-    sleep(2);
 
     TRACE_WARN("end");
 

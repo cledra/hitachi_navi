@@ -88,39 +88,10 @@ uint32_t Navicore::CreateSession_internal(void)
 		return -1;
 	}
 
-	//NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);                          // CDR - mapviewer (3) - MapContext (vect)
-	//NC_MP_SetMapScaleLevel(NC_MP_MAP_MAIN, g_ctx.main_window_mapScale); // CDR - mapviewer (3) - MapContext (vect)
-
 	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;       // CDR - navicore (1) - NaviContext
 	glv_input_func.touch_down   = sample_hmi_button_down;               // CDR - navicore (1) - NaviContext
 	glv_input_func.touch_up     = sample_hmi_button_up;                 // CDR - navicore (1) - NaviContext
 
-	//glv_map_window = glvCreateNativeWindow(ctx->display.glvDisplay, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, NULL);           // CDR - mapviewinstance (4)
-	//glv_hmi_window = glvCreateNativeWindow(ctx->display.glvDisplay, 0, 0, g_ctx.WinWidth, g_ctx.WinHeight, glv_map_window); // CDR - mapviewinstance (4)
-
-	//glvInitTimer(); // CDR - mapviewinstance (4)
-
-	/*g_ctx.display.SurfaceViewEventFunc.init		= map_init;     // CDR - mapviewInstance (4) - MapContext (vect)
-	g_ctx.display.SurfaceViewEventFunc.reshape	= map_reshape;
-	g_ctx.display.SurfaceViewEventFunc.redraw	= map_redraw;
-	g_ctx.display.SurfaceViewEventFunc.update	= NULL;
-	g_ctx.display.SurfaceViewEventFunc.timer	= map_timer;
-	g_ctx.display.SurfaceViewEventFunc.gesture	= map_gesture;
-
-	g_ctx.display.map_context = glvCreateSurfaceView(glv_map_window, NC_MP_MAP_MAIN, &g_ctx.display.SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
-
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.init		= hmi_init; // CDR - mapviewInstance (4)
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.reshape	= NULL;
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.redraw	= NULL;
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.update	= hmi_update;
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.timer	= NULL;
-	g_ctx.display.hmi.hmi_SurfaceViewEventFunc.gesture	= NULL;
-
-	g_ctx.display.hmi.hmi_context = glvCreateSurfaceView(glv_hmi_window, NC_MP_MAP_MAIN, &g_ctx.display.hmi.hmi_SurfaceViewEventFunc);  // CDR - mapviewInstance (4)
-
-	glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_FLICK_TIMER_ID, GLV_TIMER_REPEAT, 50);          // CDR - mapviewInstance (4)
-	glvCreateTimer(g_ctx.display.map_context, 1000, GESTURE_LONG_PRESS_TIMER_ID, GLV_TIMER_ONLY_ONCE, 700); // CDR - mapviewInstance (4)
-*/
     return 0;
 }
 
@@ -132,7 +103,7 @@ uint32_t Navicore::CreateSession(const std::string& client)
         return 0;
     }
 
-    if (CreateSession_internal(/*&g_ctx*/) < 0) // error
+    if (CreateSession_internal() < 0) // error
     {
         TRACE_ERROR("fail to create session (%s)", client.c_str());
         return 0;
@@ -398,6 +369,7 @@ void Navicore::SetWaypoints(
             NcPointsTab[index].coord.longitude = carState.coord.longitude;
             NcPointsTab[index].rpPointType = LST_START;
             NcPointsTab[index].rpPointIndex = index;
+            TRACE_DEBUG("insert point %d", index);
             index++;
             /* --- */
 
@@ -418,13 +390,21 @@ void Navicore::SetWaypoints(
     std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > >::const_iterator wp_map;
     for (wp_map = waypointsList.begin(); wp_map != waypointsList.end(); wp_map++)
     {
+        TRACE_DEBUG("entry map");
         std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >::const_iterator map;
         for (map = (*wp_map).begin(); map != (*wp_map).end(); map++)
         {
+            TRACE_DEBUG("entry variant");
             if ((*map).first == NAVICORE_LATITUDE)
+            {
                 newLat = (*map).second._2.reader().get_double();
+                TRACE_DEBUG("newLat = %f", newLat);
+            }
             else if ((*map).first == NAVICORE_LONGITUDE)
+            {
                 newLon = (*map).second._2.reader().get_double();
+                TRACE_DEBUG("newLon = %f", newLon);
+            }
         }
 
         /* Add waypoint in the Genivi table: */
@@ -463,10 +443,13 @@ void Navicore::SetWaypoints(
             NcPointsTab[index].rpPointType = LST_NORMAL;
         }
         NcPointsTab[index].rpPointIndex = index;
+        TRACE_DEBUG("insert point %d", index);
         index++;
         /* --- */
     }
 
+    /* TODO: move the rest to 'CalculateRoute' */
+    TRACE_DEBUG("calling NC_RP_PlanSingleRoute (%zu points)", size);
     NC_RP_PlanSingleRoute(&NcPointsTab[0], size);
 
     sample_hmi_set_pin_mode(0);
