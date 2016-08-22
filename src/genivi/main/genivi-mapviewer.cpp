@@ -271,7 +271,8 @@ uint32_t Mapviewer::CreateMapViewInstance(
 
     if (mapViewSize._1 > WinWidth || mapViewSize._2 > WinHeight)
     {
-        TRACE_ERROR("Incompatible map size (%" PRIu16 ":%" PRIu16 ")", mapViewSize._1, mapViewSize._2);
+        TRACE_ERROR("Incompatible map size (%" PRIu16 ":%" PRIu16 " vs %" PRIu16 ":%" PRIu16 ")",
+            mapViewSize._1, mapViewSize._2, WinWidth, WinHeight);
         return 0;
     }
     
