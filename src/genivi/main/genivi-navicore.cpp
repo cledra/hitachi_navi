@@ -60,6 +60,14 @@ uint32_t Navicore::CreateSession_internal(void)
 	naviStartUpResolution(resolution); 
 	naviStartUpRegion(region);
 
+    if (region == NAVI_REGION_JAPAN) {
+		set_map_draw_japan(1);
+		hmiMAP_MAX_SCALE = 12;
+	} else {
+		set_map_draw_japan(0);
+		hmiMAP_MAX_SCALE = 11;
+	}
+
 	glvDisplay = glvOpenDisplay(dpyName);
 	if(!glvDisplay){
 		TRACE_ERROR("glvOpenDisplay() failed");

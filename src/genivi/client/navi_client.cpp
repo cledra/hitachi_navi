@@ -80,15 +80,19 @@ int main(int argc, char * argv[])
     mapviewer.SetFollowCarMode(mapViewerSession, mapViewInstance, true);
 
     sleep(2);
+    TRACE_INFO("SetCameraHeadingAngle 90");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 90);
 
     sleep(2);
+    TRACE_INFO("SetCameraHeadingAngle 180");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 180);
 
     sleep(2);
+    TRACE_INFO("SetCameraHeadingAngle 270");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 270);
 
     sleep(2);
+    TRACE_INFO("SetCameraHeadingAngle 0");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 0);
 
     sleep(2);

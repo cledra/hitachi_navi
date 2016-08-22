@@ -507,9 +507,11 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
     }*/
 
     hmi_compass = 0;
+    TRACE_DEBUG("NC_MP_SetMapDispMode %" PRIu32 ", %d", lastSession, hmi_compass);
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
+    TRACE_DEBUG("NC_MP_SetMapRotate %" PRIu32 "%" PRId32, lastSession, heading);
     NC_MP_SetMapRotate(lastSession, heading);
-
+    TRACE_DEBUG("glvOnReDraw");
     glvOnReDraw(glv_map_context);
 }
 
@@ -649,12 +651,14 @@ std::vector< int32_t > Mapviewer::GetSupportedMapViewObjectVisibilities(const ui
 std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > Mapviewer::GetScaleList(const uint32_t& mapViewInstanceHandle)
 {
     std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > ret;
+    TRACE_DEBUG("hmiMAP_MAX_SCALE = %d", (int)hmiMAP_MAX_SCALE);
     for (int i=0; i<=hmiMAP_MAX_SCALE; i++)
     {
         ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > newVal;
         newVal._1 = newVal._2 = i;
         newVal._3 = MAPVIEWER_METER; // TODO: dummy value
         newVal._4 = 1000;  // TODO: dummy value
+        TRACE_DEBUG("pushing %d", i);
         ret.push_back(newVal);
     }
 

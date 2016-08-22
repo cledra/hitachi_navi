@@ -69,11 +69,11 @@ int sample_hmi_load_image_file=0;
 #define NAVI_CONFIG_PATH_GERMANY	NAVI_HOME_PATH NAVI_DATA_PATH "germany_TR6/"
 #define NAVI_CONFIG_PATH_NEVADA		NAVI_HOME_PATH NAVI_DATA_PATH "nevada_TR6/"
 
-#define NAVI_REGION_OPTIONAL	(-1)
+/*#define NAVI_REGION_OPTIONAL	(-1)    CDR
 #define NAVI_REGION_JAPAN		(0)
 #define NAVI_REGION_UK			(1)
 #define NAVI_REGION_GERMANY		(2)
-#define NAVI_REGION_NEVADA		(3)
+#define NAVI_REGION_NEVADA		(3)*/
 
 #define NAVI_RESOLUTION_OPTIONAL	(-1)	// --width WIDTH --height HEIGHT
 #define NAVI_RESOLUTION_FullHD		(0)	// Full-HD	(1080p)
@@ -552,7 +552,6 @@ int main(int argc, char *argv[])
 	}
 
     TRACE_INFO("%s", APP_NAME_TEXT);
-
     dbusServerLoop(&naviCore, &mapViewer); // add CDR
 
     TRACE_INFO("Exit");
