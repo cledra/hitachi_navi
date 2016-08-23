@@ -43,35 +43,6 @@ extern int map_gesture(GLVContext glv_ctx,int maps,int eventType,int x,int y,int
 extern int hmi_init(GLVContext glv_ctx,int maps);
 extern int hmi_update(GLVContext glv_ctx,int maps);
 
-/* TODO: bring these functions here, or put them in the correct class: */
-/*extern int map_init(GLVContext glv_ctx, int maps);
-extern int map_reshape(GLVContext glv_ctx, int maps, int width, int height);
-extern int map_redraw(GLVContext glv_ctx, int maps);
-extern int map_timer(GLVContext glv_ctx, int maps, int group, int id);
-extern int map_gesture(GLVContext glv_ctx,int maps,int eventType,int x,int y,int distanceX,int distanceY,int velocityX,int velocityY);
-extern int hmi_init(GLVContext glv_ctx, int maps);
-extern int hmi_update(GLVContext glv_ctx,int maps);*/
-
-
-/*std::vector<MapviewerSession>::iterator DisplayContext::retrieveMapviewerSessionIt(const uint32_t& sessionHandle)
-{
-    std::vector<MapviewerSession>::iterator it;
-    for (it = MapviewerSessionList.begin(); it != MapviewerSessionList.end(); it++)
-    {
-        if (it->handle == sessionHandle) return it;
-    }
-    return MapviewerSessionList.end();
-}*/
-
-/*std::vector<MapviewInstance>::iterator MapviewerSession::retrieveMapviewInstanceIt(const uint32_t& mapViewInstanceHandle)
-{
-    std::vector<MapviewInstance>::iterator it;
-    for (it = views.begin(); it != views.end(); it++)
-    {
-        if (it->handle == mapViewInstanceHandle) return it;
-    }
-    return views.end();
-}*/
 
 Mapviewer::Mapviewer( DBus::Connection &connection )
     : DBus::ObjectAdaptor(connection, "/org/genivi/mapviewer"),
@@ -102,31 +73,10 @@ uint32_t Mapviewer::CreateSession(const std::string& client)
     
     TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
     return lastSession;
-
-    /*lastSession++;
-
-    TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
-
-    MapviewerSession s(lastSession, client);
-    g_ctx.display.MapviewerSessionList.push_back(s);
-    
-    return s.handle;*/
 }
 
 void Mapviewer::DeleteSession(const uint32_t& sessionHandle)
 {
-    /*TRACE_INFO("SESSION ADAPTOR - Delete session %" PRIu32, sessionHandle);
-
-    std::vector<struct MapviewerSession>::iterator it = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (it != g_ctx.display.MapviewerSessionList.end())
-    {
-        // TODO: actually delete mapviewerSession
-        g_ctx.display.MapviewerSessionList.erase(it);
-    }
-    else
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-    }*/
     if (sessionHandle != lastSession) // we only handle 1 session for now
     {
         TRACE_ERROR(" ");
@@ -139,18 +89,6 @@ void Mapviewer::DeleteSession(const uint32_t& sessionHandle)
 
 int32_t Mapviewer::GetSessionStatus(const uint32_t& sessionHandle)
 {
-    /*int32_t ret = 1; // available
-    TRACE_INFO("SESSION ADAPTOR - GetSessionStatus %" PRIu32, sessionHandle);
-
-    std::vector<struct MapviewerSession>::iterator it = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (it != g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_DEBUG("SESSION ADAPTOR - Session %" PRIu32 " is present in list (%s)", sessionHandle, it->client.c_str());
-        ret = 0; // not available
-    }
-
-    TRACE_DEBUG("return %d", ret);
-    return ret;*/
     if (sessionHandle == 1 && lastSession != 1) // we only handle 1 session for now
         return 1; // available
     return 0; // not available
@@ -360,52 +298,18 @@ void Mapviewer::ReleaseMapViewInstance(
         glv_hmi_window = NULL;
     }
 
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map != g_ctx.display.MapviewerSessionList.end())
-    {
-        //retrieveMapviewInstanceIt
-        std::vector<struct MapviewInstance>::iterator itt = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-        if (itt != map->views.end())
-        {
-            // TODO: actually delete MapviewInstance
-            if (g_ctx.display.glv_map_window)
-            {
-                glvDestroyNativeWindow(g_ctx.display.glv_map_window);
-                g_ctx.display.glv_map_window = NULL;
-            }
-            if (g_ctx.display.hmi.glv_hmi_window)
-            {
-                glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
-                g_ctx.display.hmi.glv_hmi_window = NULL;
-            }
-    
-            map->views.erase(itt);
-            TRACE_DEBUG("delete done.");
-        }
-        else
-        {
-            TRACE_ERROR("No MapviewInstance %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        }
-
-        // TODO: for now, we only support 1 view per session
-        map->lastViewInstance = 0;
-    }
-    else
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-    }*/
     lastViewInstance = 0; // we only handle one instance for now
 }
 
 int32_t Mapviewer::GetMapViewType(
     const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewTypes()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetTargetPoint(
@@ -413,13 +317,13 @@ void Mapviewer::SetTargetPoint(
     const uint32_t& mapViewInstanceHandle,
     const ::DBus::Struct< double, double, double >& targetPoint)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 ::DBus::Struct< double, double, double > Mapviewer::GetTargetPoint(
     const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetFollowCarMode(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const bool& followCarMode)
@@ -429,21 +333,7 @@ void Mapviewer::SetFollowCarMode(const uint32_t& sessionHandle, const uint32_t& 
     if (sessionHandle != 1 || mapViewInstanceHandle != 1
         || lastSession != 1) return;
 
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return;
-    }*/
-
-    NC_MP_SetMapMoveWithCar(/*map->handle*/lastSession, followCarMode);
+    NC_MP_SetMapMoveWithCar(lastSession, followCarMode);
 }
 
 bool Mapviewer::GetFollowCarMode(const uint32_t& mapViewInstanceHandle)
@@ -456,33 +346,17 @@ bool Mapviewer::GetFollowCarMode(const uint32_t& mapViewInstanceHandle)
         return false;
     }
 
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return 0;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return 0;
-    }*/
-
     return NC_MP_GetMapMoveWithCar(lastSession);
 }
 
 void Mapviewer::SetCameraPosition(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< double, double, double >& position)
 {
-    // TODO: difficult. How to retrieve current camera position ?
-    // Use NC_MP_MoveMapDir and NC_MP_ScreenToGeoCode
+    TRACE_WARN("TODO: implement this function");
 }
 
 ::DBus::Struct< double, double, double > Mapviewer::GetCameraPosition(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO: difficult. How to retrieve current camera position ?
-    // Use NC_MP_MoveMapDir and NC_MP_ScreenToGeoCode
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& heading)
@@ -491,20 +365,6 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
 
     if (sessionHandle != 1 || mapViewInstanceHandle != 1
         || lastSession != 1) return;
-
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return;
-    }*/
 
     hmi_compass = 1;
     TRACE_DEBUG("NC_MP_SetMapDispMode %" PRIu32 ", %d", lastSession, hmi_compass);
@@ -520,7 +380,7 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
 
 void Mapviewer::SetCameraHeadingToTarget(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< double, double >& target)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle)
@@ -529,20 +389,6 @@ void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uin
 
     if (sessionHandle != 1 || mapViewInstanceHandle != 1
         || lastSession != 1) return;
-
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return;
-    }*/
 
     hmi_compass = 0;
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
@@ -553,102 +399,106 @@ void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uin
 
 void Mapviewer::GetCameraHeading(const uint32_t& mapViewInstanceHandle, int32_t& headingType, int32_t& headingAngle, ::DBus::Struct< double, double >& target)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraTiltAngle(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& tilt)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetCameraTiltAngle(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraRollAngle(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& roll)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetCameraRollAngle(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraDistanceFromTargetPoint(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const uint32_t& distance)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 uint32_t Mapviewer::GetCameraDistanceFromTargetPoint(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewScaleMode(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& scaleMode)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetMapViewScaleMode(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewScaleModes(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::AddMapViewScaleChangedListener()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::RemoveMapViewScaleChangedListener()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetCameraHeight(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const uint32_t& height)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 uint32_t Mapviewer::GetCameraHeight(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewPerspective(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& perspective)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetMapViewPerspective(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_INFO("mapViewInstanceHandle: %" PRIu32, mapViewInstanceHandle);
+    return MAPVIEWER_2D;
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewPerspectives()
 {
-    // TODO
+    TRACE_INFO(" ");
+    std::vector<int32_t> ret;
+    ret.push_back(MAPVIEWER_2D);
+    return ret;
 }
 
 void Mapviewer::SetMapViewObjectVisibility(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::map< int32_t, bool >& objectVisibilityList)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::map< int32_t, bool > Mapviewer::GetMapViewObjectVisibility(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewObjectVisibilities(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > Mapviewer::GetScaleList(const uint32_t& mapViewInstanceHandle)
@@ -675,20 +525,6 @@ void Mapviewer::SetMapViewScale(const uint32_t& sessionHandle, const uint32_t& m
     if (sessionHandle != 1 || mapViewInstanceHandle != 1
         || lastSession != 1) return;
 
-    /*std::vector<struct MapviewerSession>::iterator map = g_ctx.display.retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return;
-    }*/
-
     if (scaleID > hmiMAP_MAX_SCALE)
         main_window_mapScale = hmiMAP_MAX_SCALE;
     else if (scaleID < 0)
@@ -702,12 +538,12 @@ void Mapviewer::SetMapViewScale(const uint32_t& sessionHandle, const uint32_t& m
 
 void Mapviewer::SetMapViewScaleByDelta(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int16_t& scaleDelta)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewScaleByMetersPerPixel(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const double& metersPerPixel)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& scaleID, int32_t& isMinMax)
@@ -715,20 +551,6 @@ void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& 
     TRACE_INFO("view %" PRIu32 "in currently used map", mapViewInstanceHandle);
 
     if (mapViewInstanceHandle != 1 || lastSession != 1) return;
-
-    /*std::vector<struct MapviewerSession>::iterator map = retrieveMapviewerSessionIt(sessionHandle);
-    if (map == g_ctx.display.MapviewerSessionList.end())
-    {
-        TRACE_ERROR("No MapviewerSession %" PRIu32, sessionHandle);
-        return;
-    }
-
-    std::vector<struct MapviewInstance>::iterator it = map->retrieveMapviewInstanceIt(mapViewInstanceHandle);
-    if (it == map->views.end())
-    {
-        TRACE_ERROR("No MapviewInstance %" PRIu32 "in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
-        return;
-    }*/
 
     scaleID = NC_MP_GetMapScaleLevel(lastSession);
 
@@ -741,72 +563,72 @@ void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& 
 
 void Mapviewer::SetMapViewBoundingBox(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< ::DBus::Struct< double, double >, ::DBus::Struct< double, double > >& boundingBox)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 ::DBus::Struct< ::DBus::Struct< double, double >, ::DBus::Struct< double, double > > Mapviewer::GetMapViewBoundingBox(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewSaveArea(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const ::DBus::Struct< double, double, double, double >& saveArea)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 ::DBus::Struct< double, double, double, double > Mapviewer::GetMapViewSaveArea(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewPan(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& panningAction, const std::vector< ::DBus::Struct< uint16_t, uint16_t > >& pixelCoordinates)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< uint16_t, uint16_t > > Mapviewer::GetMapViewPan(const uint32_t& mapViewInstanceHandle, const int32_t& valueToReturn)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewRotation(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& rotationAngle, const int32_t& rotationAnglePerSecond)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::GetMapViewRotation(const uint32_t& mapViewInstanceHandle, int32_t& rotationAngle, int32_t& rotationAnglePerFrame)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewVisibilityMode(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& visibilityMode)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetMapViewVisibilityMode(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewVisibilityModes()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewPerformanceLevel(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& performanceLevel)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetMapViewPerformanceLevel(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewPerformanceLevels()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::DisplayRoute(
@@ -815,67 +637,67 @@ void Mapviewer::DisplayRoute(
     const uint32_t& routeHandle,
     const bool& highlighted)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::HideRoute(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const uint32_t& routeHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< uint32_t, bool > > Mapviewer::GetDisplayedRoutes(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< uint32_t > Mapviewer::GetPoiCategoriesVisible(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetPoiCategoriesVisible(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< uint32_t >& poiCategoryIds)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetPoiCategoriesVisibleWithinLimits(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< uint32_t >& poiCategoryIds, const uint8_t& minScaleID, const uint8_t& maxScaleID)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetPoiCategoriesNotVisible(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< uint32_t >& poiCategoryIds)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetTrafficIncidentsVisibility(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const bool& visible)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::SetMapViewTheme(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const int32_t& mapViewTheme)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 int32_t Mapviewer::GetMapViewTheme(const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< int32_t > Mapviewer::GetSupportedMapViewThemes()
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< double, double > > Mapviewer::ConvertPixelCoordsToGeoCoords(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< ::DBus::Struct< uint16_t, uint16_t > >& pixelCoordinates)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< uint16_t, uint16_t > > Mapviewer::ConvertGeoCoordsToPixelCoords(const uint32_t& sessionHandle, const uint32_t& mapViewInstanceHandle, const std::vector< ::DBus::Struct< double, double > >& geoCoordinates)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< uint32_t > Mapviewer::DisplayCustomElements(
@@ -883,7 +705,7 @@ std::vector< uint32_t > Mapviewer::DisplayCustomElements(
     const uint32_t& mapViewInstanceHandle,
     const std::vector< ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >& customElements)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Mapviewer::HideCustomElements(
@@ -891,14 +713,14 @@ void Mapviewer::HideCustomElements(
     const uint32_t& mapViewInstanceHandle,
     const std::vector< uint32_t >& customElementHandles)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::map< uint32_t, ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >
     Mapviewer::GetDisplayedCustomElements(
         const uint32_t& mapViewInstanceHandle)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }
 
 std::vector< ::DBus::Struct< int32_t, ::DBus::Struct< double, double >, ::DBus::Struct< uint8_t, ::DBus::Variant > > >
@@ -908,5 +730,5 @@ std::vector< ::DBus::Struct< int32_t, ::DBus::Struct< double, double >, ::DBus::
         const std::vector< int32_t >& selectableTypes,
         const uint16_t& maxNumberOfSelectedElements)
 {
-    // TODO
+    TRACE_WARN("TODO: implement this function");
 }

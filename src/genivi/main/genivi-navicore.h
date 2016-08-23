@@ -4,8 +4,6 @@
 #include <dbus-c++/dbus.h>
 #include "genivi-navigationcore-adaptor.h"
 
-#include "Route.hpp"
-
 extern "C" {
     #include "glview.h"
 }
@@ -115,13 +113,12 @@ class Navicore :
 
     private:
         uint32_t CreateSession_internal(void);
-        void SetIconVisibility(IconIndex index, bool visible,
+        void SetIconVisibilityCoord(IconIndex index, bool visible,
             double lat = 0.0, double lon = 0.0, bool commit = false);
-        std::vector<Route>::iterator retrieveRouteIt(const uint32_t& routeHandle);
+        void SetIconVisibility(IconIndex index, bool visible, bool commit = false);
     
         uint32_t lastSession, lastRoute;
         std::string client;
-        //std::vector<Route> Routes;
         bool IsSimulationMode;
         SimulationStatus SimulationStatus;
         std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > route;
