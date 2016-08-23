@@ -10,17 +10,15 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-extern "C" { // CDR
+extern "C" {
     #include "glview.h"
     #include "navicore.h"
 }
 
 #include "button.h"
 #include "navi.h"
+#include "guide.h"
 #include "navi_genivi.h"
-
-#include "MapviewInstance.hpp"
-#include "Guide.hpp"
 
 extern int main_window_mapScale;
 extern GLVWindow glv_map_window;
@@ -46,7 +44,7 @@ extern int hmi_update(GLVContext glv_ctx,int maps);
 
 Mapviewer::Mapviewer( DBus::Connection &connection )
     : DBus::ObjectAdaptor(connection, "/org/genivi/mapviewer"),
-      lastSession(0),lastViewInstance(0),Mapview(NULL),client("")
+      lastSession(0),lastViewInstance(0),client("")
 {
 }
 
@@ -215,13 +213,12 @@ uint32_t Mapviewer::CreateMapViewInstance(
     }
     
     lastViewInstance++;
-    Mapview = new MapviewInstance(lastViewInstance, client, mapViewType, mapViewSize._1, mapViewSize._2);
 
     NC_MP_SetMapMoveWithCar(lastSession, 1);
     NC_MP_SetMapScaleLevel(lastSession, main_window_mapScale);
 
-    glv_map_window = glvCreateNativeWindow(glvDisplay, 0, 0, Mapview->w, Mapview->h, NULL);
-    glv_hmi_window = glvCreateNativeWindow(glvDisplay, 0, 0, Mapview->w, Mapview->h, glv_map_window);
+    glv_map_window = glvCreateNativeWindow(glvDisplay, 0, 0, mapViewSize._1, mapViewSize._2, NULL);
+    glv_hmi_window = glvCreateNativeWindow(glvDisplay, 0, 0, mapViewSize._1, mapViewSize._2, glv_map_window);
 
     glvInitTimer();
 

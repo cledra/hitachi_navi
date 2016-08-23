@@ -5,8 +5,6 @@
 #include <dbus-c++/dbus.h>
 #include "genivi-mapviewer-adaptor.h"
 
-#include "MapviewInstance.hpp"
-
 class Mapviewer :
     public org::genivi::mapviewer::Session_adaptor,
     public org::genivi::mapviewer::Configuration_adaptor,
@@ -113,7 +111,6 @@ class Mapviewer :
 
     private:
         uint32_t lastSession, lastViewInstance;
-        MapviewInstance *Mapview;
         std::string client;
         pthread_t p;
 };

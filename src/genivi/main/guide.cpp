@@ -77,12 +77,12 @@ static void *guideThread(void *no_arg)
 		switch(rmsg.data[0]){
 		case GUIDE_ON_TIMER:
 				// printf("guide timer\n");
-				TRACE_INFO("receive GUIDE_ON_TIMER");
+				//TRACE_INFO("receive GUIDE_ON_TIMER");
 				if(NC_Simulation_IsInSimu() == 0){
 					pthreadStopTimer(guide_threadId,GUIDE_TIMER_ID);
 					break;
 				}
-				TRACE_DEBUG("NC_DM_GetCarMoveStatus = %d", NC_DM_GetCarMoveStatus());
+				//TRACE_DEBUG("NC_DM_GetCarMoveStatus = %d", NC_DM_GetCarMoveStatus());
 #if 0
 				if(SC_DM_GetCarMoveStatus() == 2){
 					/* 到着 */
@@ -164,7 +164,7 @@ void sample_createGuideThread(void)
 	}
 }
 
-void sample_destroyGuideThread(void) // CDR
+void sample_destroyGuideThread(void)
 {
     void *res;
 

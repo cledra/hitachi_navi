@@ -25,21 +25,19 @@
 #include <stdio.h>
 #include <string.h>
 
-extern "C" { // CDR
+extern "C" {
     #include "glview.h"
     #include "navicore.h"
 }
 
 #include "png.h"
 #include "font.h"
-//#include "navicoredef.h"// CDR
 #include "navi.h"
 #include "HMI_Icon.h"
-//#include "button.h"
 
-#include "genivi-navicore.h" // CDR
-#include "genivi-mapviewer.h" // CDR
-#include "NaviTrace.h" // CDR
+#include "genivi-navicore.h"
+#include "genivi-mapviewer.h"
+#include "NaviTrace.h"
 #include "server.h"
 #include "navi_genivi.h"
 
@@ -48,7 +46,7 @@ extern "C" { // CDR
 Navicore  *naviCore;
 Mapviewer *mapViewer;
 
-char *dpyName = NULL; // CDR
+char *dpyName = NULL;
 GLVContext glv_map_context = 0;
 GLVContext glv_hmi_context = 0;
 
@@ -69,11 +67,6 @@ int sample_hmi_load_image_file=0;
 #define NAVI_CONFIG_PATH_GERMANY	NAVI_HOME_PATH NAVI_DATA_PATH "germany_TR6/"
 #define NAVI_CONFIG_PATH_NEVADA		NAVI_HOME_PATH NAVI_DATA_PATH "nevada_TR6/"
 
-/*#define NAVI_REGION_OPTIONAL	(-1)    CDR
-#define NAVI_REGION_JAPAN		(0)
-#define NAVI_REGION_UK			(1)
-#define NAVI_REGION_GERMANY		(2)
-#define NAVI_REGION_NEVADA		(3)*/
 
 #define NAVI_RESOLUTION_OPTIONAL	(-1)	// --width WIDTH --height HEIGHT
 #define NAVI_RESOLUTION_FullHD		(0)	// Full-HD	(1080p)
@@ -93,15 +86,15 @@ char navi_config_map_font_file[NAVI_DATA_PATH_SIZE]={0};
 
 //static int WinWidth = 1080, WinHeight = 1670;	// agl
 //static int WinWidth = 1920, WinHeight = 1080;	// Full-HD	(1080p)
-int WinWidth = 1280, WinHeight = 720;	// HD		( 720p)             // CDR
+int WinWidth = 1280, WinHeight = 720;	// HD		( 720p)
 
 //static int resolution = NAVI_RESOLUTION_HD;
-int resolution = NAVI_RESOLUTION_AGL_DEMO; // CDR
+int resolution = NAVI_RESOLUTION_AGL_DEMO;
 
-int region     = NAVI_REGION_JAPAN; // CDR
+int region     = NAVI_REGION_JAPAN;
 //static int region     = NAVI_REGION_UK;
 
-GLVDisplay glvDisplay; // CDR
+GLVDisplay glvDisplay;
 GLVWindow  glv_map_window;
 GLVWindow  glv_hmi_window;
 
@@ -296,8 +289,6 @@ int hmi_update(GLVContext glv_ctx,int maps)
 	return(GLV_OK);
 }
 
-//#define GESTURE_FLICK_TIMER_ID			(1000) // CDR
-//#define GESTURE_LONG_PRESS_TIMER_ID		(1001) // CDR
 
 #define PI	(3.1415926)
 static float calcAngleBaseS(float x, float y)
@@ -541,18 +532,18 @@ int main_arg(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	/*GLVDisplay	glv_dpy;        // CDR
-	GLVWindow	glv_map_window;
-	GLVWindow	glv_hmi_window;*/
 	int rc;
 
 	rc = main_arg(argc,argv);
 	if(0 != rc){
-		return -1;
+		return(-1);
 	}
 
     TRACE_INFO("%s", APP_NAME_TEXT);
-    dbusServerLoop(&naviCore, &mapViewer); // add CDR
+    dbusServerLoop(&naviCore, &mapViewer);
+
+    delete naviCore;
+    delete mapViewer;
 
     TRACE_INFO("Exit");
 	return(0);

@@ -25,8 +25,6 @@ void dbusServerLoop(Navicore **naviCore, Mapviewer **mapViewer)
     DBus::Connection conn = DBus::Connection::SessionBus();
     conn.request_name("org.agl.gpsnavi");
 
-    /*Navicore naviCore(conn);
-    Mapviewer mapViewer(conn);*/
     *naviCore = new Navicore(conn);
     *mapViewer = new Mapviewer(conn);
     TRACE_DEBUG("DBus server loop initialized");

@@ -493,8 +493,6 @@ void _glvOpenNativeDisplay(GLVDISPLAY_t *glv_dpy)
 {
 	   struct wl_registry *registry;
 
-       printf("[%s:%d] CDR\n", __func__, __LINE__);
-
 	   glv_dpy->native_dpy = wl_display_connect(NULL);
 	   glv_dpy->wl_dpy.display = glv_dpy->native_dpy;
 
@@ -512,7 +510,6 @@ void _glvOpenNativeDisplay(GLVDISPLAY_t *glv_dpy)
 
 void _glvCloseNativeDisplay(GLVDISPLAY_t *glv_dpy)
 {
-        printf("[%s:%d] CDR\n", __func__, __LINE__);
        wl_display_flush(glv_dpy->native_dpy);
 	   wl_display_disconnect(glv_dpy->native_dpy);
 }

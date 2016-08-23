@@ -29,15 +29,13 @@ extern "C" {
 #include "navi.h"
 #include "HMI_Icon.h"
 
-#include "NaviTrace.h"
-
 extern GLVContext glv_hmi_context;
 extern GLVContext glv_map_context;
 
 static int hmi_move_with_car=-1;
 static int old_hmi_set_pin=-1;
 static int hmi_set_pin=0;
-int hmi_compass=0; // CDR
+int hmi_compass=0;
 static int hmi_fource_update_flag = 0;
 
 #define DEMO_BUTTON_OWNPOSI			(0)
@@ -281,37 +279,30 @@ void sample_hmi_update(GLVContext glv_ctx)
 	int updateFlag = 0;
 	int new_car;
 
-    //TRACE_DEBUG(" "); // CDR
-
 	/* ------------------------------------------ */
 	new_car = NC_MP_GetMapMoveWithCar(NC_MP_MAP_MAIN);
 	if(hmi_move_with_car != new_car){
 		updateFlag = 1;
-        //TRACE_DEBUG(" "); // CDR
 		hmi_move_with_car = new_car;
 	}
 	/* ------------------------------------------ */
 	if(old_hmi_set_pin != hmi_set_pin){
 		updateFlag = 1;
-        //TRACE_DEBUG(" "); // CDR
 		old_hmi_set_pin = hmi_set_pin;
 	}
 	/* ------------------------------------------ */
 	if(old_push_buttonId != current_push_buttonId){
 		updateFlag = 1;
-        //TRACE_DEBUG(" "); // CDR
 		old_push_buttonId = current_push_buttonId;
 	}
 	/* ------------------------------------------ */
 	if(old_push_buttonOn != current_push_buttonOn){
 		updateFlag = 1;
-        //TRACE_DEBUG(" "); // CDR
 		old_push_buttonOn = current_push_buttonOn;
 	}
 	/* ------------------------------------------ */
 	if(hmi_fource_update_flag == 1){	/* 強制更新 */
 		hmi_fource_update_flag = 0;
-        //TRACE_DEBUG(" "); // CDR
 		updateFlag = 1;
 	}
 	/* ------------------------------------------ */
@@ -329,7 +320,6 @@ void sample_hmi_update(GLVContext glv_ctx)
     /* ----------------------------------------------------------- */
     {
 		MP_GL_PushMatrix();
-        //TRACE_DEBUG(" "); // CDR
 
 		MP_GL_BeginBlend();
 
@@ -348,10 +338,8 @@ void sample_hmi_update(GLVContext glv_ctx)
 			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
 			if((current_push_buttonId == DEMO_BUTTON_SCALE_UP) && (old_push_buttonOn == 1)){
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,26); //
-                //TRACE_DEBUG(" "); // CDR
 			}else{
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,25); //
-                //TRACE_DEBUG(" "); // CDR
 			}
 		}
 
@@ -379,10 +367,8 @@ void sample_hmi_update(GLVContext glv_ctx)
 			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
 			if((current_push_buttonId == DEMO_BUTTON_SCALE_DOWN) && (old_push_buttonOn == 1)){
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,24); //
-                //TRACE_DEBUG(" "); // CDR
 			}else{
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,23); //
-                //TRACE_DEBUG(" "); // CDR
 			}
 		}
 
@@ -393,7 +379,6 @@ void sample_hmi_update(GLVContext glv_ctx)
     if(hmi_move_with_car == 0){
 		MP_GL_PushMatrix();
 		MP_GL_BeginBlend();
-        //TRACE_DEBUG(" "); // CDR
 
 		glColor4f(0.0, 0.0, 0.0, 0.6);
 
@@ -410,10 +395,8 @@ void sample_hmi_update(GLVContext glv_ctx)
 			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
 			if((current_push_buttonId == DEMO_BUTTON_OWNPOSI) && (old_push_buttonOn == 1)){
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,30); //
-                //TRACE_DEBUG(" "); // CDR
 			}else{
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,29); //
-                //TRACE_DEBUG(" "); // CDR
 			}
 			sample_hmi_set_button_visible(DEMO_BUTTON_OWNPOSI,1);
 		}
@@ -423,10 +406,8 @@ void sample_hmi_update(GLVContext glv_ctx)
     }
     /* ----------------------------------------------------------- */
     if(NC_DM_IsExistRoute() == 1){
-        //TRACE_DEBUG(" "); // CDR
     	/* 経路がある */
     	if(NC_Simulation_IsInSimu() == 1){
-            //TRACE_DEBUG(" "); // CDR
     		/* 終了ボタンを表示する */
     		MP_GL_PushMatrix();
     		MP_GL_BeginBlend();
@@ -444,10 +425,8 @@ void sample_hmi_update(GLVContext glv_ctx)
     			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
     			if((current_push_buttonId == DEMO_BUTTON_GUIDE_END) && (old_push_buttonOn == 1)){
     				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,22); //
-                    //TRACE_DEBUG(" "); // CDR
     			}else{
     				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,21); //
-                    //TRACE_DEBUG(" "); // CDR
     			}
     			sample_hmi_set_button_visible(DEMO_BUTTON_GUIDE_END,1);
     		}
@@ -458,7 +437,6 @@ void sample_hmi_update(GLVContext glv_ctx)
     		/* 開始ボタンを表示する */
     		MP_GL_PushMatrix();
     		MP_GL_BeginBlend();
-            //TRACE_DEBUG(" "); // CDR
     		glColor4f(0.0, 0.0, 0.0, 0.6);
     		{
     			DEMO_BUTTON_t	*button;
@@ -473,10 +451,8 @@ void sample_hmi_update(GLVContext glv_ctx)
     			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
     			if((current_push_buttonId == DEMO_BUTTON_GUIDE_START) && (old_push_buttonOn == 1)){
     				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,27); //
-                    //TRACE_DEBUG(" "); // CDR
     			}else{
     				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,28); //
-                    //TRACE_DEBUG(" "); // CDR
     			}
     			sample_hmi_set_button_visible(DEMO_BUTTON_GUIDE_START,1);
     		}
@@ -486,7 +462,6 @@ void sample_hmi_update(GLVContext glv_ctx)
     	}
     }else
     if(hmi_set_pin == 1){
-        //TRACE_DEBUG(" "); // CDR
 		MP_GL_PushMatrix();
 		MP_GL_BeginBlend();
 
@@ -504,10 +479,8 @@ void sample_hmi_update(GLVContext glv_ctx)
 			hmiMP_GL_DrawSquares(x,y,w - offset,h - offset);
 			if((current_push_buttonId == DEMO_BUTTON_ROUTE) && (old_push_buttonOn == 1)){
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,28); //
-                //TRACE_DEBUG(" "); // CDR
 			}else{
 				hmiMP_ICON_Draw(x + (w/2) - offset,y + (h/2) - offset,0.0f,scale,27); //
-                //TRACE_DEBUG(" "); // CDR
 			}
 			sample_hmi_set_button_visible(DEMO_BUTTON_ROUTE,1);
 		}
@@ -551,16 +524,13 @@ void sample_hmi_request_action(int buttonId)
 {
 	switch(buttonId){
 	case DEMO_BUTTON_OWNPOSI:
-        TRACE_DEBUG("DEMO_BUTTON_OWNPOSI"); // TODO: CDR
 		NC_MP_SetMapMoveWithCar(NC_MP_MAP_MAIN,1);
 		glvOnReDraw(glv_map_context);
 		break;
 	case DEMO_BUTTON_ROUTE:
-        TRACE_DEBUG("DEMO_BUTTON_ROUTE"); // TODO: CDR
 		sample_calc_demo_route();
 		break;
 	case DEMO_BUTTON_COMPASS:
-        TRACE_DEBUG("DEMO_BUTTON_COMPASS"); // TODO: CDR
 		if(hmi_compass== 0){
 			hmi_compass = 1;
 		}else{
@@ -573,15 +543,12 @@ void sample_hmi_request_action(int buttonId)
 		glvOnReDraw(glv_map_context);
 		break;
 	case DEMO_BUTTON_GUIDE_START:
-        TRACE_DEBUG("DEMO_BUTTON_GUIDE_START"); // TODO: CDR
 		sample_guide_request_start();
 		break;
 	case DEMO_BUTTON_GUIDE_END:
-        TRACE_DEBUG("DEMO_BUTTON_GUIDE_END"); // TODO: CDR
 		sample_guide_request_end();
 		break;
 	case DEMO_BUTTON_SCALE_UP:
-        TRACE_DEBUG("DEMO_BUTTON_SCALE_UP"); // TODO: CDR
 		   if(main_window_mapScale < hmiMAP_MAX_SCALE){
 			   main_window_mapScale++;
 				   if (main_window_mapScale == 1) {
@@ -593,7 +560,6 @@ void sample_hmi_request_action(int buttonId)
 		   }
 		break;
 	case DEMO_BUTTON_SCALE_DOWN:
-        TRACE_DEBUG("DEMO_BUTTON_SCALE_DOWN"); // TODO: CDR
   	   if(main_window_mapScale > 0){
   		   main_window_mapScale--;
 				   if (main_window_mapScale == 1) {
