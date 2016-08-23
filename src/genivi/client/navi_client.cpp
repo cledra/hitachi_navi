@@ -81,46 +81,81 @@ int main(int argc, char * argv[])
     ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > version;
 
     version = navicore.GuidanceGetVersion();
-    TRACE_INFO("Navicore version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
+    TRACE_INFO("Navicore guidance version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
+        version._4.c_str(), version._3, version._2, version._1);
+
+    version = navicore.RoutingGetVersion();
+    TRACE_INFO("Navicore routing version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
         version._4.c_str(), version._3, version._2, version._1);
     
     version = mapviewer.MapViewerControlGetVersion();
     TRACE_INFO("MapViewer version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
         version._4.c_str(), version._3, version._2, version._1);
 
-    navicoreSession = navicore.CreateSession(std::string("AW-navicore"));
+    navicoreSession = navicore.CreateSession(std::string("My Navicore Session"));
     TRACE_INFO("navicore.CreateSession() --> %" PRIu32, navicoreSession);
 
-    mapViewerSession = mapviewer.CreateSession(std::string("AW-mapviewer"));
+    mapViewerSession = mapviewer.CreateSession(std::string("My MapViewer Session"));
     TRACE_INFO("mapviewer.CreateSession() --> %" PRIu32, mapViewerSession);
 
     mapViewInstance = mapviewer.CreateMapViewInstance(mapViewerSession, resolution, MAPVIEWER_MAIN_MAP);
     TRACE_INFO("mapviewer.CreateMapViewInstance(%" PRIu16 ":%" PRIu16 ") --> %" PRIu32,
         resolution._1, resolution._2, mapViewInstance);
 
+    std::vector< ::DBus::Struct< uint32_t, std::string > > navicoreAllSessions =
+        navicore.GetAllSessions();
+    TRACE_INFO("Current navicore sessions:");
+    for (std::vector< ::DBus::Struct< uint32_t, std::string > >::iterator it =
+        navicoreAllSessions.begin(); it != navicoreAllSessions.end(); it++)
+    {
+        TRACE_INFO("\t%" PRIu32 ", %s", it->_1, it->_2.c_str());
+    }
+
     uint32_t route = navicore.CreateRoute(navicoreSession);
     TRACE_INFO("CreateRoute %" PRIu32 " -> %" PRIu32, navicoreSession, route);
     sleep(2);
 
-    std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > wpList;
-    std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > point1;
-    ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lat;
-    ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lon;
-    
-    // far away
-    point1Lat._1 = NAVICORE_LATITUDE;
-    point1Lat._2.writer().append_double(35.594820421);
-    point1Lon._1 = NAVICORE_LONGITUDE;
-    point1Lon._2.writer().append_double(139.720988227);
+    std::vector<uint32_t> navicoreAllRoutes = navicore.GetAllRoutes();
+    TRACE_INFO("Current navicore routes:");
+    for (std::vector<uint32_t>::iterator it =
+        navicoreAllRoutes.begin(); it != navicoreAllRoutes.end(); it++)
+    {
+        TRACE_INFO("\t%" PRIu32, *it);
+    }
 
-    /*point1Lat._1 = NAVICORE_LATITUDE;
-    point1Lat._2.writer().append_double(35.589478895);
-    point1Lon._1 = NAVICORE_LONGITUDE;
-    point1Lon._2.writer().append_double(139.72986084);*/
-    
-    point1[NAVICORE_LATITUDE] = point1Lat;
-    point1[NAVICORE_LONGITUDE] = point1Lon;
-    wpList.push_back(point1);
+    std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > wpList;
+
+    {
+        // far away from original position :
+        std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > point1;
+        ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lat;
+        ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lon;
+        
+        point1Lat._1 = NAVICORE_LATITUDE;
+        point1Lat._2.writer().append_double(35.594820421);
+        point1Lon._1 = NAVICORE_LONGITUDE;
+        point1Lon._2.writer().append_double(139.720988227);
+        
+        point1[NAVICORE_LATITUDE] = point1Lat;
+        point1[NAVICORE_LONGITUDE] = point1Lon;
+        wpList.push_back(point1);
+    }
+
+    {
+        // close to original position :
+        std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > point2;
+        ::DBus::Struct< uint8_t, ::DBus::Variant > point2Lat;
+        ::DBus::Struct< uint8_t, ::DBus::Variant > point2Lon;
+        
+        point2Lat._1 = NAVICORE_LATITUDE;
+        point2Lat._2.writer().append_double(35.589478895);
+        point2Lon._1 = NAVICORE_LONGITUDE;
+        point2Lon._2.writer().append_double(139.72986084);
+        
+        point2[NAVICORE_LATITUDE] = point2Lat;
+        point2[NAVICORE_LONGITUDE] = point2Lon;
+        wpList.push_back(point2);
+    }
 
     TRACE_INFO("SetWaypoints (start from current position + 1 point)");
     navicore.SetWaypoints(navicoreSession, route, true, wpList);
@@ -138,13 +173,67 @@ int main(int argc, char * argv[])
 
     sleep(10);
 
-    /*TRACE_INFO("SetCameraHeadingTrackUp");
-    mapviewer.SetCameraHeadingTrackUp(mapViewerSession, mapViewInstance);
+    TRACE_INFO("GetWayPoints");
+    std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > wpList2;
+    bool startFromCurrentPosition;
+    navicore.GetWaypoints(route, startFromCurrentPosition, wpList2);
 
-    sleep(10);*/
+    std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > >::const_iterator wp_map;
+    for (wp_map = wpList2.begin(); wp_map != wpList2.end(); wp_map++)
+    {
+        std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >::const_iterator map;
+        double latitude, longitude;
+        for (map = (*wp_map).begin(); map != (*wp_map).end(); map++)
+        {
+            if ((*map).first == NAVICORE_LATITUDE)
+            {
+                latitude = (*map).second._2.reader().get_double();
+            }
+            else if ((*map).first == NAVICORE_LONGITUDE)
+            {
+                longitude = (*map).second._2.reader().get_double();
+            }
+
+            TRACE_INFO("\t(%f, %f)", latitude, longitude);
+        }
+    }
+    sleep(2);
 
     TRACE_INFO("SetCameraHeadingAngle");
     mapviewer.SetCameraHeadingAngle(mapViewerSession, mapViewInstance, 0);
+    sleep(10);
+
+    TRACE_INFO("GetPosition");
+    std::vector< int32_t > requestValues;
+    requestValues.push_back(NAVICORE_LATITUDE);
+    requestValues.push_back(NAVICORE_LONGITUDE);
+    requestValues.push_back(NAVICORE_TIMESTAMP);
+    requestValues.push_back(NAVICORE_HEADING);
+    requestValues.push_back(NAVICORE_SPEED);
+    requestValues.push_back(NAVICORE_SIMULATION_MODE);
+    std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > getPosRet;
+    std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >::iterator pr_map;
+    getPosRet = navicore.GetPosition(requestValues);
+    for (pr_map = getPosRet.begin(); pr_map != getPosRet.end(); pr_map++)
+    {
+        if (pr_map->first == NAVICORE_LATITUDE) {
+            TRACE_INFO("\tlatitude:\t%f", pr_map->second._2.reader().get_double());
+        } else if (pr_map->first == NAVICORE_LONGITUDE) {
+            TRACE_INFO("\tlongitude:\t%f", pr_map->second._2.reader().get_double());
+        } else if (pr_map->first == NAVICORE_TIMESTAMP) {
+            TRACE_INFO("\ttimestamp:\%" PRIu32, pr_map->second._2.reader().get_uint32());
+        } else if (pr_map->first == NAVICORE_HEADING) {
+            TRACE_INFO("\theading:\t%" PRIu32, pr_map->second._2.reader().get_uint32());
+        } else if (pr_map->first == NAVICORE_SPEED) {
+            TRACE_INFO("\tspeed:\t%" PRId32, pr_map->second._2.reader().get_int32());
+        } else if (pr_map->first == NAVICORE_SIMULATION_MODE) {
+            TRACE_INFO("\tsimulation:\t%d", pr_map->second._2.reader().get_bool());
+        }
+    }
+
+    TRACE_INFO("SetCameraHeadingTrackUp");
+    mapviewer.SetCameraHeadingTrackUp(mapViewerSession, mapViewInstance);
+
     sleep(10);
 
     std::vector< ::DBus::Struct< uint16_t, uint16_t, int32_t, uint32_t > > scaleList;
@@ -209,7 +298,7 @@ int main(int argc, char * argv[])
     navicore.DeleteSession(navicoreSession);
 
     TRACE_WARN("end");
-
+    
 /*
     try
     {

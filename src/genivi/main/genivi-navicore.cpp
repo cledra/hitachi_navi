@@ -9,10 +9,9 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-extern "C" { // CDR
+extern "C" {
     #include "glview.h"
     #include "navicore.h"
-    //#include "navi.h"
 }
 
 #include "navi.h"
@@ -88,9 +87,9 @@ uint32_t Navicore::CreateSession_internal(void)
 		return -1;
 	}
 
-	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;       // CDR - navicore (1) - NaviContext
-	glv_input_func.touch_down   = sample_hmi_button_down;               // CDR - navicore (1) - NaviContext
-	glv_input_func.touch_up     = sample_hmi_button_up;                 // CDR - navicore (1) - NaviContext
+	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;
+	glv_input_func.touch_down   = sample_hmi_button_down;
+	glv_input_func.touch_up     = sample_hmi_button_up;
 
     return 0;
 }
@@ -124,17 +123,6 @@ void Navicore::DeleteSession(const uint32_t& sessionHandle)
         return;
     }
 
-    //TODO: delete Mapviewer if it's not already done
-    /*if (g_ctx.display.glv_map_window)
-    {
-        glvDestroyNativeWindow(g_ctx.display.glv_map_window);
-        g_ctx.display.glv_map_window = NULL;
-    }
-    if (g_ctx.display.hmi.glv_hmi_window)
-    {
-        glvDestroyNativeWindow(g_ctx.display.hmi.glv_hmi_window);
-        g_ctx.display.hmi.glv_hmi_window = NULL;
-    }*/
     TRACE_DEBUG("calling NC_Finalize()");
     NC_Finalize();
     glvCloseDisplay(glvDisplay);
@@ -170,7 +158,8 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions(
     return version;
 }
 
-std::vector<Route>::iterator Navicore::retrieveRouteIt(const uint32_t& routeHandle)
+// private
+/*std::vector<Route>::iterator Navicore::retrieveRouteIt(const uint32_t& routeHandle)
 {
     std::vector<Route>::iterator it;
     for (it = Routes.begin(); it != Routes.end(); it++)
@@ -178,7 +167,7 @@ std::vector<Route>::iterator Navicore::retrieveRouteIt(const uint32_t& routeHand
         if (it->handle == routeHandle) return it;
     }
     return Routes.end();
-}
+}*/
 
 uint32_t Navicore::CreateRoute(const uint32_t& sessionHandle)
 {
@@ -186,20 +175,20 @@ uint32_t Navicore::CreateRoute(const uint32_t& sessionHandle)
 
     lastRoute++;
     TRACE_INFO("Create route %" PRIu32 " for session %" PRIu32, lastRoute, sessionHandle);
-    Route newRoute(lastRoute);
-    Routes.push_back(newRoute);
-    return newRoute.handle;
+    /*Route newRoute(lastRoute);
+    Routes.push_back(newRoute);*/
+    //return newRoute.handle;
+    return lastRoute;
 }
 
 void Navicore::DeleteRoute(const uint32_t& sessionHandle, const uint32_t& routeHandle)
 {
     TRACE_INFO("Delete route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
-    std::vector<Route>::iterator it = retrieveRouteIt(routeHandle);
+    /*std::vector<Route>::iterator it = retrieveRouteIt(routeHandle);
     
     if (it != Routes.end())
     {
-        // TODO: actually delete route
         Routes.erase(it);
         //NC_RP_DeleteRouteResult();
         // TODO: stop guidance if any
@@ -208,7 +197,11 @@ void Navicore::DeleteRoute(const uint32_t& sessionHandle, const uint32_t& routeH
     else
     {
         TRACE_ERROR("No route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
-    }
+    }*/
+
+    lastRoute = 0;
+    //TODO: stop guidance if any
+    //NC_RP_DeleteRouteResult();
 }
 
 void Navicore::SetCostModel(const uint32_t& sessionHandle, const uint32_t& routeHandle, const int32_t& costModel)
@@ -248,7 +241,7 @@ void Navicore::GetSupportedRoutePreferences(
     std::vector< ::DBus::Struct< int32_t, int32_t > >& routePreferencesList,
     std::vector< ::DBus::Struct< int32_t, int32_t > >& conditionPreferenceList)
 {
-
+    TRACE_WARN("TODO: implement this function");
 }
 
 void Navicore::SetRouteSchedule(
@@ -299,6 +292,7 @@ std::vector< std::vector< ::DBus::Struct< double, double > > > Navicore::GetExcl
     TRACE_WARN("TODO: implement this function");
 }
 
+// private
 void Navicore::SetIconVisibility(IconIndex index, bool visible,
     double lat, double lon, bool commit)
 {
@@ -331,14 +325,15 @@ void Navicore::SetWaypoints(
 
     TRACE_INFO("route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
-    if (sessionHandle != lastSession) return; // we only handle 1 session for now
+    // we only handle 1 session & 1 route for now
+    if (sessionHandle != lastSession || routeHandle != lastRoute) return;
 
-    std::vector<struct Route>::iterator route = retrieveRouteIt(routeHandle);
+    /*std::vector<struct Route>::iterator route = retrieveRouteIt(routeHandle);
     if (route == Routes.end())
     {
         TRACE_ERROR("No Route %" PRIu32 "in session 1", routeHandle);
         return ;
-    }
+    }*/
 
     /* mask Pin flag: */
     SetIconVisibility(FLAG_PIN_IDX, false);
@@ -355,12 +350,12 @@ void Navicore::SetWaypoints(
         if (NC_DM_GetCarState(&carState, e_SC_CARLOCATION_NOW) == NC_SUCCESS)
         {
             /* Add waypoint in the Genivi table: */
-            newLat = carState.coord.latitude/1024.0/3600.0;
+            /*newLat = carState.coord.latitude/1024.0/3600.0;
             newLon = carState.coord.longitude/1024.0/3600.0;
             TRACE_DEBUG("Add waypoint in the Genivi table: %f, %f", newLat, newLon);
             WayPoint newWayPoint(newLat, newLon);
             route->WayPoints.push_back(newWayPoint);
-            TRACE_DEBUG("\tadded: %f, %f", newWayPoint.lat, newWayPoint.lon);
+            TRACE_DEBUG("\tadded: %f, %f", newWayPoint.lat, newWayPoint.lon);*/
             /* --- */
 
             /* Add waypoint in the NC table: */
@@ -374,10 +369,6 @@ void Navicore::SetWaypoints(
             /* --- */
 
             /* Display Start icon: */
-            /*demo_icon_info[START_FLAG].IconID = 21;	// start flag
-            demo_icon_info[START_FLAG].Longititude	= (INT32)carState.coord.longitude;
-            demo_icon_info[START_FLAG].Latitude		= (INT32)carState.coord.latitude;
-            demo_disp_info[START_FLAG] = 1;*/
             SetIconVisibility(FLAG_START_IDX, true, newLat, newLon);
             /* --- */
         }
@@ -408,10 +399,10 @@ void Navicore::SetWaypoints(
         }
 
         /* Add waypoint in the Genivi table: */
-        TRACE_DEBUG("Add waypoint in the Genivi table: %f, %f", newLat, newLon);
+        /*TRACE_DEBUG("Add waypoint in the Genivi table: %f, %f", newLat, newLon);
         WayPoint newWayPoint(newLat, newLon);
         route->WayPoints.push_back(newWayPoint);
-        TRACE_DEBUG("\tadded: %f, %f", newWayPoint.lat, newWayPoint.lon);
+        TRACE_DEBUG("\tadded: %f, %f", newWayPoint.lat, newWayPoint.lon);*/
         /* --- */
 
         /* Add waypoint in the NC table: */
@@ -422,20 +413,12 @@ void Navicore::SetWaypoints(
         {
             NcPointsTab[index].rpPointType = LST_START;
             // Display Start icon:
-            /*demo_icon_info[START_FLAG].IconID = 21;	// start flag
-            demo_icon_info[START_FLAG].Latitude		= (INT32)(newLat*1024.0*3600.0);
-            demo_icon_info[START_FLAG].Longititude	= (INT32)(newLon*1024.0*3600.0);
-            demo_disp_info[START_FLAG] = 1;*/
             SetIconVisibility(FLAG_START_IDX, true, newLat, newLon);
         }
         else if (index == (size-1))
         {
             NcPointsTab[index].rpPointType = LST_DEST;
-            // Display Dest icon and update display:
-            /*demo_icon_info[DEST_FLAG].IconID = 22;	// goal flag
-            demo_icon_info[DEST_FLAG].Latitude		= (INT32)(newLat*1024.0*3600.0);
-            demo_icon_info[DEST_FLAG].Longititude	= (INT32)(newLon*1024.0*3600.0);
-            demo_disp_info[DEST_FLAG] = 1;*/
+            // Display Dest icon and update display (commit = true):
             SetIconVisibility(FLAG_DEST_IDX, true, newLat, newLon, true);
         }
         else
@@ -452,6 +435,9 @@ void Navicore::SetWaypoints(
     TRACE_DEBUG("calling NC_RP_PlanSingleRoute (%zu points)", size);
     NC_RP_PlanSingleRoute(&NcPointsTab[0], size);
 
+    /* memorize route, as we don't have a NC API to retrieve way points: */
+    route = waypointsList;
+
     sample_hmi_set_pin_mode(0);
 	sample_hmi_request_mapDraw();
 }
@@ -461,7 +447,14 @@ void Navicore::GetWaypoints(
     bool& startFromCurrentPosition,
     std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > >& waypointsList)
 {
-    TRACE_WARN("TODO: implement this function");
+    startFromCurrentPosition = false; // TODO: handle this parameter;
+
+    TRACE_INFO("route %" PRIu32, routeHandle);
+
+    // we only handle 1 session & 1 route for now
+    if (routeHandle != lastRoute) return;
+
+    waypointsList = route;
 }
 
 void Navicore::CalculateRoute(
@@ -514,10 +507,12 @@ std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > Navicore::GetRou
 std::vector< uint32_t > Navicore::GetAllRoutes()
 {
     std::vector<uint32_t> ret;
-    for (std::vector<Route>::iterator it=Routes.begin(); it != Routes.end(); it++)
+    /*for (std::vector<Route>::iterator it=Routes.begin(); it != Routes.end(); it++)
     {
         ret.push_back((*it).handle);
-    }
+    }*/
+    // we only handle 1 route:
+    if (lastRoute == 1) ret.push_back(lastRoute);
     return ret;
 }
 
@@ -626,7 +621,81 @@ void Navicore::PauseSimulation(const uint32_t& sessionHandle)
 std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >
     Navicore::GetPosition(const std::vector< int32_t >& valuesToReturn)
 {
-    TRACE_WARN("TODO: implement this function");
+    std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > ret;
+    SMCARSTATE carState;
+
+    TRACE_INFO(" ");
+
+    if (NC_DM_GetCarState(&carState, e_SC_CARLOCATION_NOW) != NC_SUCCESS)
+    // TODO: test with e_SC_CARLOCATION_SIMU
+    {
+        TRACE_ERROR(" ");
+        return ret;
+    }
+
+    for (std::vector< int32_t >::const_iterator it = valuesToReturn.begin(); it != valuesToReturn.end(); it++)
+    {
+        ::DBus::Struct< uint8_t, ::DBus::Variant > s;
+        s._1 = *it;
+
+        if (s._1 == NAVICORE_LATITUDE) {
+            s._2.writer().append_double(carState.coord.latitude/1024/3600);
+            ret[NAVICORE_LATITUDE] = s;
+            TRACE_INFO("\tlatitude: %f", (double)(carState.coord.latitude/1024/3600));
+        } else if (s._1 == NAVICORE_LONGITUDE) {
+            s._2.writer().append_double(carState.coord.longitude/1024/3600);
+            ret[NAVICORE_LONGITUDE] = s;
+            TRACE_INFO("\tlongitude: %f", (double)(carState.coord.longitude/1024/3600));
+        } else if (s._1 == NAVICORE_TIMESTAMP) {
+            s._2.writer().append_double(/*carState.gpsTime*/0.0); // TODO
+            ret[NAVICORE_LONGITUDE] = s;
+            TRACE_INFO("\tGPS time: %s", carState.gpsTime);
+        } else if (s._1 == NAVICORE_HEADING) {
+            s._2.writer().append_uint32((uint32_t)carState.dir);
+            ret[NAVICORE_HEADING] = s;
+            TRACE_INFO("\tdirection: %" PRId32, carState.dir);
+        } else if (s._1 == NAVICORE_SPEED) {
+            s._2.writer().append_int32((int32_t)carState.speed);
+            ret[NAVICORE_SPEED] = s;
+            TRACE_INFO("\tspeed: %" PRId32 "(%f)", (int32_t)carState.speed, carState.speed);
+        } else if (s._1 == NAVICORE_SIMULATION_MODE) {
+            s._2.writer().append_bool(NC_Simulation_IsInSimu());
+            ret[NAVICORE_SIMULATION_MODE] = s;
+            TRACE_INFO("\tsimulation mode: %d", NC_Simulation_IsInSimu());
+        }
+    }
+#if 0
+    s._1 = NAVICORE_LATITUDE;
+    s._2.writer().append_double(carState.coord.latitude/1024/3600);
+    ret[NAVICORE_LATITUDE] = s;
+    TRACE_INFO("\tlatitude: %f", (double)(carState.coord.latitude/1024/3600));
+    
+    s._1 = NAVICORE_LONGITUDE;
+    s._2.writer().append_double(carState.coord.longitude/1024/3600);
+    ret[NAVICORE_LONGITUDE] = s;
+    TRACE_INFO("\tlongitude: %f", (double)(carState.coord.longitude/1024/3600));
+
+    /*s._1 = NAVICORE_TIMESTAMP;
+    s._2.writer().append_double(carState.gpsTime);
+    ret[NAVICORE_LONGITUDE] = s;*/
+    TRACE_INFO("\tGPS time: %s", carState.gpsTime);
+
+    s._1 = NAVICORE_HEADING;
+    s._2.writer().append_uint32((uint32_t)carState.dir);
+    ret[NAVICORE_HEADING] = s;
+    TRACE_INFO("\tdirection: %" PRId32, carState.dir);
+
+    s._1 = NAVICORE_SPEED;
+    s._2.writer().append_int32((int32_t)carState.speed);
+    ret[NAVICORE_SPEED] = s;
+    TRACE_INFO("\tspeed: %" PRId32 "(%f)", (int32_t)carState.speed, carState.speed);
+
+    s._1 = NAVICORE_SIMULATION_MODE;
+    s._2.writer().append_bool(NC_Simulation_IsInSimu());
+    ret[NAVICORE_SIMULATION_MODE] = s;
+    TRACE_INFO("\tsimulation mode: %d", NC_Simulation_IsInSimu());
+#endif
+    return ret;
 }
 
 void Navicore::SetPosition(

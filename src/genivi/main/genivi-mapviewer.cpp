@@ -509,8 +509,11 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
     hmi_compass = 1;
     TRACE_DEBUG("NC_MP_SetMapDispMode %" PRIu32 ", %d", lastSession, hmi_compass);
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
+
+    /* WARNING: this API exists but is not effective */
     TRACE_DEBUG("NC_MP_SetMapRotate %" PRIu32 "%" PRId32, lastSession, heading);
-    NC_MP_SetMapRotate(lastSession, heading);
+    NC_MP_SetMapRotate(lastSession, heading); 
+    
     TRACE_DEBUG("glvOnReDraw");
     glvOnReDraw(glv_map_context);
 }

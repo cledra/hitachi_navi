@@ -121,10 +121,10 @@ class Navicore :
     
         uint32_t lastSession, lastRoute;
         std::string client;
-        //GLVDisplay glvDisplay;
-        std::vector<Route> Routes;
+        //std::vector<Route> Routes;
         bool IsSimulationMode;
         SimulationStatus SimulationStatus;
+        std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > > route;
 };
 
 #endif // GENIVI_NAVICORE_H
