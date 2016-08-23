@@ -345,7 +345,7 @@ void Navicore::SetWaypoints(
 
     size = waypointsList.size();
     if (startFromCurrentPosition) size++;
-    NcPointsTab = (SMRPPOINT*) malloc(size*sizeof(SMRPPOINT));
+    NcPointsTab = (SMRPPOINT*) calloc(size, sizeof(SMRPPOINT));
     TRACE_DEBUG("alloc array of size %zu (startFromCurrentPosition = %d)", size, startFromCurrentPosition);
 
     if (startFromCurrentPosition)

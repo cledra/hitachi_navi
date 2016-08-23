@@ -506,7 +506,7 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
         return;
     }*/
 
-    hmi_compass = 0;
+    hmi_compass = 1;
     TRACE_DEBUG("NC_MP_SetMapDispMode %" PRIu32 ", %d", lastSession, hmi_compass);
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
     TRACE_DEBUG("NC_MP_SetMapRotate %" PRIu32 "%" PRId32, lastSession, heading);
@@ -541,7 +541,7 @@ void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uin
         return;
     }*/
 
-    hmi_compass = 1;
+    hmi_compass = 0;
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
     NC_MP_SetMapRotate(lastSession, 0);
 

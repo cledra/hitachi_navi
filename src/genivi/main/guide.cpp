@@ -77,7 +77,7 @@ static void *guideThread(void *no_arg)
 		switch(rmsg.data[0]){
 		case GUIDE_ON_TIMER:
 				// printf("guide timer\n");
-                TRACE_INFO("receive GUIDE_ON_TIMER");
+				TRACE_INFO("receive GUIDE_ON_TIMER");
 				if(NC_Simulation_IsInSimu() == 0){
 					pthreadStopTimer(guide_threadId,GUIDE_TIMER_ID);
 					break;
@@ -118,7 +118,7 @@ static void *guideThread(void *no_arg)
 			sample_hmi_request_mapDraw();
 			break;
 		case GUIDE_ON_GUIDE_START:
-            TRACE_INFO("receive GUIDE_ON_GUIDE_START");
+			TRACE_INFO("receive GUIDE_ON_GUIDE_START");
 #if 1		/* 誘導が開始しない・・・なぜかわからないけど、おまじない。 */
 			NC_Simulation_StartSimulation();	//	シミュレーションを開始する
 			NC_Guide_StartGuide();				//	経路誘導を開始する
@@ -131,7 +131,7 @@ static void *guideThread(void *no_arg)
 			pthreadStartTimer(guide_threadId,GUIDE_TIMER_ID);
 			break;
 		case GUIDE_ON_GUIDE_END:
-            TRACE_INFO("receive GUIDE_ON_GUIDE_START");
+			TRACE_INFO("receive GUIDE_ON_GUIDE_END");
 			NC_Guide_StopGuide();				//	経路誘導を終了する
 			NC_Simulation_ExitSimulation();		//	シミュレーションを終了する
 			pthreadStopTimer(guide_threadId,GUIDE_TIMER_ID);

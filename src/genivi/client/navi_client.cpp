@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <string.h>
 #include "navicore.h"
 #include "mapviewer.h"
 #include "../main/NaviTrace.h"
@@ -14,28 +15,36 @@
 
 #include <unistd.h> /* for sleep */
 
+#define DEFAULT_W 1280
+#define DEFAULT_H 720
+
 DBus::BusDispatcher dispatcher;
 
+static void usage(void)
+{
+	printf("Usage:\n");
+	printf("  -r, --resolution  [fhd|hd|agl]    set the resolution\n");
+	printf("  -w, --width       WIDTH           width  of wayland surface\n");
+	printf("  -h, --height      HEIGHT          height of wayland surface\n");
+	printf("      --help                        this help message\n");
+}
+
 static struct option long_options[] = {
-    {"width",   required_argument, 0,  'w' },
-    {"height",  required_argument, 0,  'h' },
+    {"width",       required_argument, 0,  'w' },
+    {"height",      required_argument, 0,  'h' },
+    {"resolution",  required_argument, 0,  'r' },
+    {"help",        no_argument,       0,  'p' },
     {0,         0,                 0,  0 }
 };
 
 int main(int argc, char * argv[])
 {
-    DBus::default_dispatcher = &dispatcher;
-    DBus::Connection conn = DBus::Connection::SessionBus();
-    Navicore navicore(conn, "/org/genivi/navicore", "org.agl.gpsnavi");
-    MapViewer mapviewer(conn, "/org/genivi/mapviewer", "org.agl.gpsnavi");
-    uint32_t navicoreSession, mapViewerSession, mapViewInstance;
-    ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > version;
     ::DBus::Struct< uint16_t, uint16_t > resolution;
-    resolution._1 = 1280;
-    resolution._2 = 720;
+    resolution._1 = DEFAULT_W;
+    resolution._2 = DEFAULT_H;
     int opt;
 
-    while ((opt = getopt_long(argc, argv, "w:h:", long_options, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "w:h:r:p", long_options, NULL)) != -1)
     {
         switch (opt)
         {
@@ -45,9 +54,31 @@ int main(int argc, char * argv[])
             case 'h':
                 resolution._2 = atoi(optarg);
                 break;
+            case 'r':
+                if (!strcmp(optarg, "hd")) {
+                    resolution._1 = 1280;
+                    resolution._2 = 720;
+                } else if (!strcmp(optarg, "fhd")) {
+                    resolution._1 = 1920;
+                    resolution._2 = 1080;
+                } else if (!strcmp(optarg, "agl")) {
+                    resolution._1 = 1080;
+                    resolution._2 = 1670;
+                }
+                break;
+            case 'p':
+                usage();
+                return 0;
             default: break;
         }
     }
+
+    DBus::default_dispatcher = &dispatcher;
+    DBus::Connection conn = DBus::Connection::SessionBus();
+    Navicore navicore(conn, "/org/genivi/navicore", "org.agl.gpsnavi");
+    MapViewer mapviewer(conn, "/org/genivi/mapviewer", "org.agl.gpsnavi");
+    uint32_t navicoreSession, mapViewerSession, mapViewInstance;
+    ::DBus::Struct< uint16_t, uint16_t, uint16_t, std::string > version;
 
     version = navicore.GuidanceGetVersion();
     TRACE_INFO("Navicore version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
@@ -76,20 +107,16 @@ int main(int argc, char * argv[])
     ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lat;
     ::DBus::Struct< uint8_t, ::DBus::Variant > point1Lon;
     
-    /*point1Lat._1 = NAVICORE_LATITUDE;
-    point1Lat._2.writer().append_double(35.590429959);
-    point1Lon._1 = NAVICORE_LONGITUDE;
-    point1Lon._2.writer().append_double(139.730397407);*/
-    
-    /*point1Lat._1 = NAVICORE_LATITUDE;
-    point1Lat._2.writer().append_double(35.588711209);
-    point1Lon._1 = NAVICORE_LONGITUDE;
-    point1Lon._2.writer().append_double(139.728857693);*/
-    
+    // far away
     point1Lat._1 = NAVICORE_LATITUDE;
     point1Lat._2.writer().append_double(35.594820421);
     point1Lon._1 = NAVICORE_LONGITUDE;
     point1Lon._2.writer().append_double(139.720988227);
+
+    /*point1Lat._1 = NAVICORE_LATITUDE;
+    point1Lat._2.writer().append_double(35.589478895);
+    point1Lon._1 = NAVICORE_LONGITUDE;
+    point1Lon._2.writer().append_double(139.72986084);*/
     
     point1[NAVICORE_LATITUDE] = point1Lat;
     point1[NAVICORE_LONGITUDE] = point1Lon;
