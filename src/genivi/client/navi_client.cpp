@@ -26,6 +26,8 @@ static void usage(void)
 	printf("  -r, --resolution  [fhd|hd|agl]    set the resolution\n");
 	printf("  -w, --width       WIDTH           width  of wayland surface\n");
 	printf("  -h, --height      HEIGHT          height of wayland surface\n");
+	printf("  -f, --force-display               immediately returns after sessions creation to force display initialization\n");
+    printf("  -u, --reuse-existing-sessions     don't create new sessions (suppose an earlier call with -f)\n");
 	printf("      --help                        this help message\n");
 }
 
@@ -33,6 +35,7 @@ static struct option long_options[] = {
     {"width",       required_argument, 0,  'w' },
     {"height",      required_argument, 0,  'h' },
     {"resolution",  required_argument, 0,  'r' },
+    {"force-display", no_argument,     0,  'f' },
     {"help",        no_argument,       0,  'p' },
     {0,         0,                 0,  0 }
 };
@@ -43,8 +46,10 @@ int main(int argc, char * argv[])
     resolution._1 = DEFAULT_W;
     resolution._2 = DEFAULT_H;
     int opt;
+    bool force_display = false;
+    bool reuse_sessions = false;
 
-    while ((opt = getopt_long(argc, argv, "w:h:r:p", long_options, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "w:h:r:fpu", long_options, NULL)) != -1)
     {
         switch (opt)
         {
@@ -65,6 +70,12 @@ int main(int argc, char * argv[])
                     resolution._1 = 1080;
                     resolution._2 = 1670;
                 }
+                break;
+            case 'f':
+                force_display = true;
+                break;
+            case 'u':
+                reuse_sessions = true;
                 break;
             case 'p':
                 usage();
@@ -95,9 +106,12 @@ int main(int argc, char * argv[])
     TRACE_INFO("MapViewer version : %s : .%" PRIu16 ".%" PRIu16 ".%" PRIu16,
         version._4.c_str(), version._3, version._2, version._1);
 
-    /** Navicore::CreateSession() */
-    navicoreSession = navicore.CreateSession(std::string("My Navicore Session"));
-    TRACE_INFO("navicore.CreateSession() --> %" PRIu32, navicoreSession);
+    if (!reuse_sessions)
+    {
+        /** Navicore::CreateSession() */
+        navicoreSession = navicore.CreateSession(std::string("My Navicore Session"));
+        TRACE_INFO("navicore.CreateSession() --> %" PRIu32, navicoreSession);
+    }
 
     /** Navicore::GetAllSessions() */
     std::vector< ::DBus::Struct< uint32_t, std::string > > navicoreAllSessions =
@@ -107,16 +121,53 @@ int main(int argc, char * argv[])
         navicoreAllSessions.begin(); it != navicoreAllSessions.end(); it++)
     {
         TRACE_INFO("\t%" PRIu32 ", %s", it->_1, it->_2.c_str());
+        if (reuse_sessions)
+        {
+            TRACE_INFO("using navicore session %" PRIu32);
+            navicoreSession = it->_1;
+        }
     }
 
-    /** Mapviewer::CreateSession() */
-    mapViewerSession = mapviewer.CreateSession(std::string("My MapViewer Session"));
-    TRACE_INFO("mapviewer.CreateSession() --> %" PRIu32, mapViewerSession);
+    if (!reuse_sessions)
+    {
+        /** Mapviewer::CreateSession() */
+        mapViewerSession = mapviewer.CreateSession(std::string("My MapViewer Session"));
+        TRACE_INFO("mapviewer.CreateSession() --> %" PRIu32, mapViewerSession);
+    }
 
-    /** Mapviewer::CreateMapViewInstance() */
-    mapViewInstance = mapviewer.CreateMapViewInstance(mapViewerSession, resolution, MAPVIEWER_MAIN_MAP);
-    TRACE_INFO("mapviewer.CreateMapViewInstance(%" PRIu16 ":%" PRIu16 ") --> %" PRIu32,
-        resolution._1, resolution._2, mapViewInstance);
+    /** Mapviewer::GetAllSessions() */
+    std::vector< ::DBus::Struct< uint32_t, std::string > > mapViewerAllSessions =
+        mapviewer.GetAllSessions();
+    TRACE_INFO("Current mapviewer sessions:");
+    for (std::vector< ::DBus::Struct< uint32_t, std::string > >::iterator it =
+        mapViewerAllSessions.begin(); it != mapViewerAllSessions.end(); it++)
+    {
+        TRACE_INFO("\t%" PRIu32 ", %s", it->_1, it->_2.c_str());
+        if (reuse_sessions)
+        {
+            TRACE_INFO("using mapviewer session %" PRIu32);
+            mapViewerSession = it->_1;
+        }
+    }
+
+    if (!reuse_sessions)
+    {
+        /** Mapviewer::CreateMapViewInstance() */
+        mapViewInstance = mapviewer.CreateMapViewInstance(mapViewerSession, resolution, MAPVIEWER_MAIN_MAP);
+        TRACE_INFO("mapviewer.CreateMapViewInstance(%" PRIu16 ":%" PRIu16 ") --> %" PRIu32,
+            resolution._1, resolution._2, mapViewInstance);
+    }
+    else
+    {
+        TRACE_INFO("using mapviewinstance 1");
+        mapViewInstance = 1;
+    }
+
+    if (force_display)
+    {
+        TRACE_WARN("stopping here because force-display option is set");
+        return 0;
+    }
 
     /** Navicore::CreateRoute() */
     uint32_t route = navicore.CreateRoute(navicoreSession);
@@ -320,17 +371,20 @@ int main(int argc, char * argv[])
     TRACE_INFO("DeleteRoute %" PRIu32 ", %" PRIu32, navicoreSession, route);
     navicore.DeleteRoute(navicoreSession, route);
 
-    /** Mapviewer::ReleaseMapViewInstance() */
-    TRACE_INFO("calling ReleaseMapViewInstance");
-    mapviewer.ReleaseMapViewInstance(mapViewerSession, mapViewInstance);
+    if (!reuse_sessions)
+    {
+        /** Mapviewer::ReleaseMapViewInstance() */
+        TRACE_INFO("calling ReleaseMapViewInstance");
+        mapviewer.ReleaseMapViewInstance(mapViewerSession, mapViewInstance);
 
-    /** Mapviewer::DeleteSession() */
-    TRACE_INFO("calling DeleteSession (mapViewer)");
-    mapviewer.DeleteSession(mapViewerSession);
+        /** Mapviewer::DeleteSession() */
+        TRACE_INFO("calling DeleteSession (mapViewer)");
+        mapviewer.DeleteSession(mapViewerSession);
 
-    /** Navicore::DeleteSession() */
-    TRACE_INFO("calling DeleteSession (navicore)");
-    navicore.DeleteSession(navicoreSession);
+        /** Navicore::DeleteSession() */
+        TRACE_INFO("calling DeleteSession (navicore)");
+        navicore.DeleteSession(navicoreSession);
+    }
 
     TRACE_WARN("end");
     return 0;
