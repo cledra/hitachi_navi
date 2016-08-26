@@ -32,12 +32,13 @@ static void usage(void)
 }
 
 static struct option long_options[] = {
-    {"width",       required_argument, 0,  'w' },
-    {"height",      required_argument, 0,  'h' },
-    {"resolution",  required_argument, 0,  'r' },
-    {"force-display", no_argument,     0,  'f' },
-    {"help",        no_argument,       0,  'p' },
-    {0,         0,                 0,  0 }
+    {"width",                   required_argument,  0,  'w' },
+    {"height",                  required_argument,  0,  'h' },
+    {"resolution",              required_argument,  0,  'r' },
+    {"force-display",           no_argument,        0,  'f' },
+    {"reuse-existing-sessions", no_argument,        0,  'u' },
+    {"help",                    no_argument,        0,  'p' },
+    {0,                         0,                  0,  '\0'}
 };
 
 int main(int argc, char * argv[])
@@ -123,7 +124,7 @@ int main(int argc, char * argv[])
         TRACE_INFO("\t%" PRIu32 ", %s", it->_1, it->_2.c_str());
         if (reuse_sessions)
         {
-            TRACE_INFO("using navicore session %" PRIu32);
+            TRACE_INFO("using navicore session %" PRIu32, it->_1);
             navicoreSession = it->_1;
         }
     }
@@ -145,7 +146,7 @@ int main(int argc, char * argv[])
         TRACE_INFO("\t%" PRIu32 ", %s", it->_1, it->_2.c_str());
         if (reuse_sessions)
         {
-            TRACE_INFO("using mapviewer session %" PRIu32);
+            TRACE_INFO("using mapviewer session %" PRIu32, it->_1);
             mapViewerSession = it->_1;
         }
     }
