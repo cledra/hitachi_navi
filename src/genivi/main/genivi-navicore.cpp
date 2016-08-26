@@ -116,13 +116,13 @@ uint32_t Navicore::CreateSession(const std::string& client)
 
 void Navicore::DeleteSession(const uint32_t& sessionHandle)
 {
-    if (sessionHandle != lastSession) // we only handle 1 session for now
+    if (sessionHandle != lastSession || !sessionHandle) // we only handle 1 session for now
     {
-        TRACE_ERROR(" ");
+        TRACE_ERROR("session: %" PRIu32, sessionHandle);
         return;
     }
 
-    TRACE_DEBUG("calling NC_Finalize()");
+    TRACE_DEBUG("calling NC_Finalize() - session %" PRIu32, sessionHandle);
     NC_Finalize();
     glvCloseDisplay(glvDisplay);
     glvDisplay = NULL;
@@ -142,8 +142,11 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions(
 {
     std::vector< ::DBus::Struct< uint32_t, std::string > > list;
     ::DBus::Struct< uint32_t, std::string > a;
-    a._1 = lastSession; a._2 = client;
-    list.push_back(a);
+    if (lastSession > 0)
+    {
+        a._1 = lastSession; a._2 = client;
+        list.push_back(a);
+    }
     return list;
 }
 
@@ -159,6 +162,12 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Navicore::GetAllSessions(
 
 uint32_t Navicore::CreateRoute(const uint32_t& sessionHandle)
 {
+    if (sessionHandle != lastSession || !sessionHandle)
+    {
+        TRACE_ERROR("session %" PRIu32, sessionHandle);
+        return 0;
+    }
+
     if (lastRoute != 0) return 0; // we only manage 1 route for now
 
     lastRoute++;
@@ -169,6 +178,13 @@ uint32_t Navicore::CreateRoute(const uint32_t& sessionHandle)
 void Navicore::DeleteRoute(const uint32_t& sessionHandle, const uint32_t& routeHandle)
 {
     TRACE_INFO("Delete route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
+
+    if (sessionHandle != lastSession || routeHandle != lastRoute ||
+        !sessionHandle || !routeHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", route %" PRIu32, sessionHandle, routeHandle);
+        return;
+    }
 
     lastRoute = 0;
     //TODO: stop guidance if any
@@ -312,7 +328,12 @@ void Navicore::SetWaypoints(
     TRACE_INFO("route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
     // we only handle 1 session & 1 route for now
-    if (sessionHandle != lastSession || routeHandle != lastRoute) return;
+    if (sessionHandle != lastSession || routeHandle != lastRoute ||
+        !sessionHandle || !routeHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", route %" PRIu32, sessionHandle, routeHandle);
+        return;
+    }
 
     /* mask Pin flag: */
     SetIconVisibility(FLAG_PIN_IDX, false, false);
@@ -394,9 +415,15 @@ void Navicore::GetWaypoints(
     bool& startFromCurrentPosition,
     std::vector< std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > > >& waypointsList)
 {
-    startFromCurrentPosition = false; // TODO: handle this parameter;
-
     TRACE_INFO("route %" PRIu32, routeHandle);
+
+    if (routeHandle != lastRoute || !routeHandle)
+    {
+        TRACE_ERROR("route %" PRIu32, routeHandle);
+        return;
+    }
+
+    startFromCurrentPosition = false; // TODO: handle this parameter;
 
     // we only handle 1 session & 1 route for now
     if (routeHandle != lastRoute) return;
@@ -416,7 +443,12 @@ void Navicore::CalculateRoute(
     TRACE_INFO("route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
     // we only handle 1 session & 1 route for now
-    if (sessionHandle != lastSession || routeHandle != lastRoute) return;
+    if (sessionHandle != lastSession || routeHandle != lastRoute ||
+        !sessionHandle || !routeHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", route %" PRIu32, sessionHandle, routeHandle);
+        return;
+    }
 
     size = route.size();
     NcPointsTab = (SMRPPOINT*) calloc(size, sizeof(SMRPPOINT));
@@ -479,7 +511,12 @@ void Navicore::CancelRouteCalculation(
     TRACE_INFO("route %" PRIu32 " for session %" PRIu32, routeHandle, sessionHandle);
 
     // we only handle 1 session & 1 route for now
-    if (sessionHandle != lastSession || routeHandle != lastRoute) return;
+    if (sessionHandle != lastSession || routeHandle != lastRoute ||
+        !sessionHandle || !routeHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", route %" PRIu32, sessionHandle, routeHandle);
+        return;
+    }
 
     NC_RP_DeleteRouteResult();
 
@@ -559,7 +596,7 @@ std::vector< ::DBus::Struct< uint32_t, uint32_t > > Navicore::GetBlockedRouteStr
 void Navicore::SetSimulationMode(const uint32_t& sessionHandle, const bool& activate)
 {
     TRACE_INFO("activate = %d (%d)", activate, IsSimulationMode);
-    if (sessionHandle != lastSession) return;
+    if (sessionHandle != lastSession || !sessionHandle) return;
 
     if (activate == IsSimulationMode) return; // nothing to do
 
@@ -617,7 +654,7 @@ void Navicore::RemoveSimulationSpeedListener()
 void Navicore::StartSimulation(const uint32_t& sessionHandle)
 {
     TRACE_INFO("current status: %d, %d", IsSimulationMode, (int)SimulationStatus);
-    if (sessionHandle != lastSession) return;
+    if (sessionHandle != lastSession || !sessionHandle) return;
 
     if (!IsSimulationMode) return; // activate simulation first
     else if (SimulationStatus == SIMULATION_STATUS_RUNNING) return; // nothing to do

@@ -96,8 +96,11 @@ std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions
 {
     std::vector< ::DBus::Struct< uint32_t, std::string > > list;
     ::DBus::Struct< uint32_t, std::string > a;
-    a._1 = lastSession; a._2 = client;
-    list.push_back( a );
+    if (lastSession > 0)
+    {
+        a._1 = lastSession; a._2 = client;
+        list.push_back( a );
+    }
     return list;
 }
 
@@ -260,9 +263,11 @@ void Mapviewer::ReleaseMapViewInstance(
 {
     TRACE_INFO("Release instance view %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
 
-    if (sessionHandle != 1 || mapViewInstanceHandle != 1 || lastViewInstance != 1) // we only support 1 view instance for now
+    // we only support 1 view instance for now
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
     {
-        TRACE_ERROR(" ");
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle );
         return;
     }
 
@@ -327,8 +332,12 @@ void Mapviewer::SetFollowCarMode(const uint32_t& sessionHandle, const uint32_t& 
 {
     TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", followCarMode %d", mapViewInstanceHandle, sessionHandle, followCarMode);
 
-    if (sessionHandle != 1 || mapViewInstanceHandle != 1
-        || lastSession != 1) return;
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle );
+        return;
+    }
 
     NC_MP_SetMapMoveWithCar(lastSession, followCarMode);
 }
@@ -337,9 +346,9 @@ bool Mapviewer::GetFollowCarMode(const uint32_t& mapViewInstanceHandle)
 {
     TRACE_INFO("view %" PRIu32, mapViewInstanceHandle);
 
-    if (mapViewInstanceHandle != 1 || lastSession != 1)
+    if (mapViewInstanceHandle != lastViewInstance || !mapViewInstanceHandle)
     {
-        TRACE_ERROR(" ");
+        TRACE_ERROR("instance %" PRIu32, mapViewInstanceHandle);
         return false;
     }
 
@@ -360,8 +369,12 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
 {
     TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", heading %" PRIu32, mapViewInstanceHandle, sessionHandle, heading);
 
-    if (sessionHandle != 1 || mapViewInstanceHandle != 1
-        || lastSession != 1) return;
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle );
+        return;
+    }
 
     hmi_compass = 1;
     TRACE_DEBUG("NC_MP_SetMapDispMode %" PRIu32 ", %d", lastSession, hmi_compass);
@@ -384,8 +397,12 @@ void Mapviewer::SetCameraHeadingTrackUp(const uint32_t& sessionHandle, const uin
 {
     TRACE_INFO("view %" PRIu32 " in session %" PRIu32, mapViewInstanceHandle, sessionHandle);
 
-    if (sessionHandle != 1 || mapViewInstanceHandle != 1
-        || lastSession != 1) return;
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle );
+        return;
+    }
 
     hmi_compass = 0;
     NC_MP_SetMapDispMode(lastSession, hmi_compass);
@@ -519,8 +536,12 @@ void Mapviewer::SetMapViewScale(const uint32_t& sessionHandle, const uint32_t& m
 {
     TRACE_INFO("view %" PRIu32 " in session %" PRIu32 ", scaleID %" PRIu16, mapViewInstanceHandle, sessionHandle, scaleID);
 
-    if (sessionHandle != 1 || mapViewInstanceHandle != 1
-        || lastSession != 1) return;
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle );
+        return;
+    }
 
     if (scaleID > hmiMAP_MAX_SCALE)
         main_window_mapScale = hmiMAP_MAX_SCALE;
@@ -547,7 +568,11 @@ void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& 
 {
     TRACE_INFO("view %" PRIu32 "in currently used map", mapViewInstanceHandle);
 
-    if (mapViewInstanceHandle != 1 || lastSession != 1) return;
+    if (mapViewInstanceHandle != lastViewInstance || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("instance %" PRIu32, mapViewInstanceHandle );
+        return;
+    }
 
     scaleID = NC_MP_GetMapScaleLevel(lastSession);
 
