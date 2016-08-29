@@ -276,7 +276,7 @@ void SC_SDM_StopReq(const pthread_msq_msg_t *msg)
 
 	// アップロード終了要求メッセージ生成
 	sendMsg.data[SC_MSG_MSG_ID] = e_SC_MSGID_REQ_SDU_STOP;
-	sendMsg.data[SC_MSG_REQ_SD_STARTTIME] = (INT32)startTime;
+	sendMsg.data[SC_MSG_REQ_SD_STARTTIME] = (uintptr_t)startTime;
 
 	// 送信メッセージをログ出力
 	SC_LOG_DebugPrint(SC_TAG_SDM,
@@ -353,7 +353,7 @@ void SC_SDM_UploadReq(const pthread_msq_msg_t *msg)
 	if (SMSDSTATUS_START == sdStatus) {
 		// アップロード要求メッセージ生成
 		sendMsg.data[SC_MSG_MSG_ID] = e_SC_MSGID_REQ_SDU_UPLOAD;
-		sendMsg.data[SC_MSG_REQ_SD_STARTTIME] = (INT32)startTime;
+		sendMsg.data[SC_MSG_REQ_SD_STARTTIME] = (uintptr_t)startTime;
 
 		// 送信メッセージをログ出力
 		SC_LOG_DebugPrint(SC_TAG_SDM,
