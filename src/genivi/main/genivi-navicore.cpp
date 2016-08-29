@@ -124,6 +124,14 @@ void Navicore::DeleteSession(const uint32_t& sessionHandle)
 
     TRACE_DEBUG("calling NC_Finalize() - session %" PRIu32, sessionHandle);
     NC_Finalize();
+
+    TRACE_DEBUG("cancel callbacks:");
+    NC_MP_SetBitmapFontCB(NULL);
+    NC_MP_SetImageReadForFileCB(NULL);
+    NC_MP_SetImageReadForImageCB(NULL);
+    NC_MP_SetMapDrawEndCB(NULL);
+
+    TRACE_DEBUG("closing display:");
     glvCloseDisplay(glvDisplay);
     glvDisplay = NULL;
 
@@ -186,9 +194,8 @@ void Navicore::DeleteRoute(const uint32_t& sessionHandle, const uint32_t& routeH
         return;
     }
 
+    CancelRouteCalculation(sessionHandle, routeHandle);
     lastRoute = 0;
-    //TODO: stop guidance if any
-    NC_RP_DeleteRouteResult();
     route.clear();
 }
 
@@ -417,16 +424,13 @@ void Navicore::GetWaypoints(
 {
     TRACE_INFO("route %" PRIu32, routeHandle);
 
+    startFromCurrentPosition = false; // TODO: handle this parameter;
+
     if (routeHandle != lastRoute || !routeHandle)
     {
         TRACE_ERROR("route %" PRIu32, routeHandle);
         return;
     }
-
-    startFromCurrentPosition = false; // TODO: handle this parameter;
-
-    // we only handle 1 session & 1 route for now
-    if (routeHandle != lastRoute) return;
 
     waypointsList = route;
 }
@@ -671,6 +675,17 @@ void Navicore::PauseSimulation(const uint32_t& sessionHandle)
     TRACE_WARN("TODO: implement this function");
 }
 
+static inline int32_t CONVERT_TO_GENIVI_HEADING(int32_t angle)
+{
+    /**
+    Hitachi heading angle:      Genivi heading angle:
+    *        90                          0
+    *   180      0                  270     90
+    *       270                         180
+    */
+    return (450-angle) % 360;
+}
+
 std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >
     Navicore::GetPosition(const std::vector< int32_t >& valuesToReturn)
 {
@@ -703,13 +718,13 @@ std::map< int32_t, ::DBus::Struct< uint8_t, ::DBus::Variant > >
             ret[NAVICORE_TIMESTAMP] = s;
             TRACE_INFO("\tGPS time: %s", carState.gpsTime);*/
         } else if (s._1 == NAVICORE_HEADING) {
-            s._2.writer().append_uint32((uint32_t)carState.dir);
+            s._2.writer().append_uint32((uint32_t)CONVERT_TO_GENIVI_HEADING(carState.dir));
             ret[NAVICORE_HEADING] = s;
             TRACE_INFO("\tdirection: %" PRId32, carState.dir);
-        } else if (s._1 == NAVICORE_SPEED) {
+        /*} else if (s._1 == NAVICORE_SPEED) { // TODO: not supported
             s._2.writer().append_int32((int32_t)carState.speed);
             ret[NAVICORE_SPEED] = s;
-            TRACE_INFO("\tspeed: %" PRId32 "(%f)", (int32_t)carState.speed, carState.speed);
+            TRACE_INFO("\tspeed: %" PRId32 "(%f)", (int32_t)carState.speed, carState.speed);*/
         } else if (s._1 == NAVICORE_SIMULATION_MODE) {
             s._2.writer().append_bool(NC_Simulation_IsInSimu());
             ret[NAVICORE_SIMULATION_MODE] = s;
