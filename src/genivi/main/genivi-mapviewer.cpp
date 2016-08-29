@@ -287,6 +287,15 @@ void Mapviewer::ReleaseMapViewInstance(
     TRACE_DEBUG("destroy Guide thread:");
     sample_destroyGuideThread();
 
+    /* Stop timers: */
+    TRACE_DEBUG("stop timers:");
+    glvStopTimer(glv_map_context,GESTURE_LONG_PRESS_TIMER_ID);
+    glvStopTimer(glv_map_context,GESTURE_FLICK_TIMER_ID);
+
+    /* Destroy surface views: */
+    /* glv_hmi_context, glv_map_context
+    TODO: implement glvCreateSurfaceView() */
+
     if (glv_map_window)
     {
         TRACE_DEBUG("destroy map window:");
