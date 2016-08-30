@@ -113,6 +113,7 @@ class Mapviewer :
         uint32_t lastSession, lastViewInstance;
         std::string client;
         pthread_t p;
+        std::vector< ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > > CustomElementsStore;
 };
 
 #endif // GENIVI_MAPVIEWER_H

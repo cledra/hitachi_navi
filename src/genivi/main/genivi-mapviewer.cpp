@@ -736,7 +736,47 @@ std::vector< uint32_t > Mapviewer::DisplayCustomElements(
     const uint32_t& mapViewInstanceHandle,
     const std::vector< ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >& customElements)
 {
-    TRACE_WARN("TODO: implement this function");
+    std::vector< ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >::const_iterator it;
+    std::vector< uint32_t > ret;
+
+    TRACE_INFO("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle);
+
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle);
+        return ret;
+    }
+
+    CustomElementsStore = customElements;
+
+    SMMAPDYNUDI* icon_info = (SMMAPDYNUDI*)malloc(customElements.size() * sizeof(SMMAPDYNUDI));
+    unsigned char* disp_info = (unsigned char*)malloc(customElements.size() * sizeof(unsigned char));
+    uint32_t index = 0;
+
+    TRACE_INFO("Custom elements:");
+    for (it = customElements.begin(); it != customElements.end(); it++)
+    {
+        TRACE_INFO("\t%" PRIu32 ": %s, %s, (%f:%f)", index, it->_1.c_str(), it->_2.c_str(), it->_3._1, it->_3._2);
+
+        icon_info[index].Latitude = (int32_t)(it->_3._1 * 1024.0 * 3600.0);
+        icon_info[index].Longititude = (int32_t)(it->_3._2 * 1024.0 * 3600.0);
+        icon_info[index].IconID = atoi(it->_2.c_str());
+
+        disp_info[index] = true; // visibility
+
+        ret.push_back(index);
+
+        index++;
+    }
+
+    NC_DM_SetIconInfo(icon_info, customElements.size());
+    NC_DM_SetDynamicUDIDisplay(disp_info, customElements.size());
+
+    free(icon_info);
+    free(disp_info);
+
+    return ret;
 }
 
 void Mapviewer::HideCustomElements(
@@ -744,7 +784,45 @@ void Mapviewer::HideCustomElements(
     const uint32_t& mapViewInstanceHandle,
     const std::vector< uint32_t >& customElementHandles)
 {
-    TRACE_WARN("TODO: implement this function");
+    std::vector< ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >::const_iterator it;
+
+    TRACE_INFO("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle);
+
+    if (sessionHandle != lastSession || mapViewInstanceHandle != lastViewInstance ||
+        !sessionHandle || !mapViewInstanceHandle)
+    {
+        TRACE_ERROR("session %" PRIu32 ", instance %" PRIu32, sessionHandle, mapViewInstanceHandle);
+        return;
+    }
+
+    SMMAPDYNUDI* icon_info = (SMMAPDYNUDI*)malloc(CustomElementsStore.size() * sizeof(SMMAPDYNUDI));
+    unsigned char* disp_info = (unsigned char*)malloc(CustomElementsStore.size() * sizeof(unsigned char));
+    uint32_t index = 0;
+
+    /* Process all custom elements: */
+    for (it = CustomElementsStore.begin(); it != CustomElementsStore.end(); it++)
+    {
+        icon_info[index].Latitude = (int32_t)(it->_3._1 * 1024.0 * 3600.0);
+        icon_info[index].Longititude = (int32_t)(it->_3._2 * 1024.0 * 3600.0);
+        icon_info[index].IconID = atoi(it->_2.c_str());
+
+        disp_info[index] = true; // visibility
+
+        index++;
+    }
+
+    /* Now, hide those whose handle is present in customElementHandles: */
+    for (std::vector<uint32_t>::const_iterator itt = customElementHandles.begin(); itt != customElementHandles.end(); itt++)
+    {
+        TRACE_INFO("\tHide element %" PRIu32, *itt);
+        disp_info[*itt] = false; // visibility
+    }
+
+    NC_DM_SetIconInfo(icon_info, CustomElementsStore.size());
+    NC_DM_SetDynamicUDIDisplay(disp_info, CustomElementsStore.size());
+
+    free(icon_info);
+    free(disp_info);
 }
 
 std::map< uint32_t, ::DBus::Struct< std::string, std::string, ::DBus::Struct< double, double >, ::DBus::Struct< int16_t, int16_t > > >
