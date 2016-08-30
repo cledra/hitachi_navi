@@ -294,7 +294,7 @@ void Mapviewer::ReleaseMapViewInstance(
 
     /* Destroy surface views: */
     /* glv_hmi_context, glv_map_context
-    TODO: implement glvCreateSurfaceView() */
+    TODO: implement glvDestroySurfaceView() */
 
     if (glv_map_window)
     {
@@ -575,7 +575,7 @@ void Mapviewer::SetMapViewScaleByMetersPerPixel(const uint32_t& sessionHandle, c
 
 void Mapviewer::GetMapViewScale(const uint32_t& mapViewInstanceHandle, uint8_t& scaleID, int32_t& isMinMax)
 {
-    TRACE_INFO("view %" PRIu32 "in currently used map", mapViewInstanceHandle);
+    TRACE_INFO("view %" PRIu32 " in currently used map", mapViewInstanceHandle);
 
     if (mapViewInstanceHandle != lastViewInstance || !mapViewInstanceHandle)
     {

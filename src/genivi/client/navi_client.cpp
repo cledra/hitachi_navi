@@ -24,7 +24,7 @@ static void usage(void)
 {
 	printf("Usage:\n");
 	printf("  -r, --resolution  [fhd|hd|agl]    set the resolution\n");
-	printf("  -w, --width       WIDTH           width  of wayland surface\n");
+	printf("  -w, --width       WIDTH           width of wayland surface\n");
 	printf("  -h, --height      HEIGHT          height of wayland surface\n");
 	printf("  -f, --force-display               immediately returns after sessions creation to force display initialization\n");
     printf("  -u, --reuse-existing-sessions     don't create new sessions (suppose an earlier call with -f)\n");
@@ -381,6 +381,8 @@ int main(int argc, char * argv[])
         /** Mapviewer::DeleteSession() */
         TRACE_INFO("calling DeleteSession (mapViewer)");
         mapviewer.DeleteSession(mapViewerSession);
+
+        sleep(1);
 
         /** Navicore::DeleteSession() */
         TRACE_INFO("calling DeleteSession (navicore)");
