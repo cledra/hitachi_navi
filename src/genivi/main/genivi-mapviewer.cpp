@@ -295,18 +295,23 @@ void Mapviewer::ReleaseMapViewInstance(
     /* Destroy surface views: */
     /* glv_hmi_context, glv_map_context
     TODO: implement glvDestroySurfaceView() */
+    glvDestroySurfaceView(glv_hmi_context);
+    glvDestroySurfaceView(glv_map_context);
+
+    pthreadDeinitTimer();
+
+    if (glv_hmi_window)
+    {
+        TRACE_DEBUG("destroy hmi window:");
+        glvDestroyNativeWindow(glv_hmi_window);
+        glv_hmi_window = NULL;
+    }
 
     if (glv_map_window)
     {
         TRACE_DEBUG("destroy map window:");
         glvDestroyNativeWindow(glv_map_window);
         glv_map_window = NULL;
-    }
-    if (glv_hmi_window)
-    {
-        TRACE_DEBUG("destroy hmi window:");
-        glvDestroyNativeWindow(glv_hmi_window);
-        glv_hmi_window = NULL;
     }
 
     lastViewInstance = 0; // we only handle one instance for now

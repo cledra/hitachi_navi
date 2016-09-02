@@ -96,7 +96,8 @@ GLVWindow glvCreateNativeWindow(GLVDisplay glv_dpy,int x, int y, int width, int 
 
 void glvDestroyNativeWindow(GLVWindow glv_win);
 
-GLVContext	glvCreateSurfaceView(GLVWindow glv_win,int maps,GLVEVENTFUNC_t *eventFunc);
+GLVContext glvCreateSurfaceView(GLVWindow glv_win,int maps,GLVEVENTFUNC_t *eventFunc);
+void glvDestroySurfaceView(GLVContext glv_context);
 
 void glvSwapBuffers(GLVContext glv_c);
 

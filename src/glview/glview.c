@@ -409,6 +409,28 @@ GLVContext glvCreateSurfaceView(GLVWindow glv_win,int maps,GLVEVENTFUNC_t *event
 	return (glv_context);
 }
 
+void glvDestroySurfaceView(GLVContext glv_context)
+{
+    void *res;
+    GLVCONTEXT_t* ctx = (GLVCONTEXT_t*)glv_context;
+
+    _glv_parent_context = 0;
+
+    if (pthread_cancel(ctx->threadId) != 0)
+        fprintf(stderr, "[%s:%d] Fail to cancel thread\n", __func__, __LINE__);
+    else if (pthread_join(ctx->threadId, &res) != 0)
+        fprintf(stderr, "[%s:%d] Fail to join canceled thread\n", __func__, __LINE__);
+    else if (res == PTHREAD_CANCELED)
+        fprintf(stderr, "[%s:%d] thread was successfully canceled\n", __func__, __LINE__);
+    else
+        fprintf(stderr, "[%s:%d] thread was not properly canceled (%p)\n", __func__, __LINE__, res);
+
+    if (pthread_msq_destroy(&ctx->queue) != PTHREAD_MSQ_OK)
+        fprintf(stderr, "[%s:%d] Fail to destroy queue\n", __func__, __LINE__);
+
+    free(ctx);
+}
+
 int glvOnReShape(GLVContext glv_c,int width, int height)
 {
 	GLVCONTEXT_t *glv_context;

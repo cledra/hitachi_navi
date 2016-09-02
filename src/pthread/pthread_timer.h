@@ -34,6 +34,7 @@ extern "C" {
 
 int pthreadCheckTimer(pthread_t threadId,int id,int count);
 void pthreadInitTimer(void);
+void pthreadDeinitTimer(void);
 int pthreadCreateTimer(pthread_t threadId,pthread_msq_id_t *queue,int userData,int group,int id,int type,int mTime);
 int pthreadStartTimer(pthread_t threadId,int id);
 int pthreadStopTimer(pthread_t threadId,int id);

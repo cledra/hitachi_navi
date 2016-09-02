@@ -39,6 +39,7 @@ typedef struct _pthreadTimerTable {
 } PTHREADTIMERTABLE_t;
 
 static sem_t timer_sem;
+static pthread_t threadId;
 #define PTHREAD_TIMER_TABLE_MAX		(10)
 static PTHREADTIMERTABLE_t pthread_timer_table[PTHREAD_TIMER_TABLE_MAX];
 
@@ -367,7 +368,7 @@ void pthreadInitTimer(void)
 {
 	int		pret = 0;
 	int		i;
-	pthread_t threadId;
+	//pthread_t threadId;
 
 	pthread_mutex_init(&pthread_timer_mutex,NULL);
 
@@ -398,4 +399,23 @@ void pthreadInitTimer(void)
 	}
 
 	return;
+}
+
+void pthreadDeinitTimer(void)
+{
+    void *res;
+
+    pthreadAllStopTimer(threadId);
+
+    if (pthread_cancel(threadId) != 0)
+        fprintf(stderr, "[%s:%d] Fail to cancel thread\n", __func__, __LINE__);
+    else if (pthread_join(threadId, &res) != 0)
+        fprintf(stderr, "[%s:%d] Fail to join canceled thread\n", __func__, __LINE__);
+    else if (res == PTHREAD_CANCELED)
+        fprintf(stderr, "[%s:%d] thread was successfully canceled\n", __func__, __LINE__);
+    else
+        fprintf(stderr, "[%s:%d] thread was not properly canceled (%p)\n", __func__, __LINE__, res);
+
+    pthreadDestroyTimer();  // does the sem_destroy(&timer_sem)
+                            // and the pthread_mutex_destroy(&pthread_timer_mutex)
 }
