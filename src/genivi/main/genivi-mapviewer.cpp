@@ -24,7 +24,7 @@ extern "C" {
     #include "navicore.h"
 }
 
-#include "navi.h" // Does this work ???
+#include "navi.h"
 #include "navi_genivi.h"
 
 extern void sample_hmi_draw_compass(FLOAT rotate);
@@ -98,16 +98,16 @@ void Mapviewer::DeleteSession(const uint32_t& sessionHandle)
 int32_t Mapviewer::GetSessionStatus(const uint32_t& sessionHandle)
 {
     if (sessionHandle == 1 && lastSession != 1) // we only handle 1 session for now
-        return 1; // available
-    return 0; // not available
+        return MAPVIEWER_AVAILABLE;
+    return MAPVIEWER_NOT_AVAILABLE;
 }
 
 std::vector< ::DBus::Struct< uint32_t, std::string > > Mapviewer::GetAllSessions()
 {
     std::vector< ::DBus::Struct< uint32_t, std::string > > list;
-    ::DBus::Struct< uint32_t, std::string > a;
     if (lastSession > 0)
     {
+        ::DBus::Struct< uint32_t, std::string > a;
         a._1 = lastSession; a._2 = client;
         list.push_back( a );
     }
