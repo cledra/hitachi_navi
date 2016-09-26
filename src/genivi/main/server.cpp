@@ -9,8 +9,6 @@
  */
 #include <stdio.h>
 #include <signal.h>
-#include "genivi-navicore.h"
-#include "genivi-mapviewer.h"
 #include "NaviTrace.h"
 
 DBus::BusDispatcher dispatcher;

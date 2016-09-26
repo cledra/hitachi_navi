@@ -33,6 +33,7 @@ extern "C" {
 
 extern GLVContext glv_hmi_context;
 extern GLVContext glv_map_context;
+extern int sample_calc_demo_route(void);
 
 static int hmi_move_with_car=-1;
 static int old_hmi_set_pin=-1;

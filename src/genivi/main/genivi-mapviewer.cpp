@@ -24,10 +24,11 @@ extern "C" {
     #include "navicore.h"
 }
 
-#include "button.h"
 #include "navi.h"
-#include "guide.h"
 #include "navi_genivi.h"
+
+extern void sample_hmi_draw_compass(FLOAT rotate);
+extern void sample_destroyGuideThread(void);
 
 extern int main_window_mapScale;
 extern GLVWindow glv_map_window;
