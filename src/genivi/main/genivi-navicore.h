@@ -1,3 +1,12 @@
+/*
+ * GPS Navigation ---An open source GPS navigation core software
+ *
+ *
+ * Copyright (c) 2016  Aisin AW, Ltd
+ *
+ * This program is dual licensed under GPL version 2 or a commercial license.
+ * See the LICENSE file distributed with this source file.
+ */
 #ifndef GENIVI_NAVICORE_H
 #define GENIVI_NAVICORE_H
 
@@ -116,7 +125,7 @@ class Navicore :
         void SetIconVisibilityCoord(IconIndex index, bool visible,
             double lat = 0.0, double lon = 0.0, bool commit = false);
         void SetIconVisibility(IconIndex index, bool visible, bool commit = false);
-    
+
         uint32_t lastSession, lastRoute;
         std::string client;
         bool IsSimulationMode;

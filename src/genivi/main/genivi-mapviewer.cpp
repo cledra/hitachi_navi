@@ -1,3 +1,12 @@
+/*
+ * GPS Navigation ---An open source GPS navigation core software
+ *
+ *
+ * Copyright (c) 2016  Aisin AW, Ltd
+ *
+ * This program is dual licensed under GPL version 2 or a commercial license.
+ * See the LICENSE file distributed with this source file.
+ */
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -68,7 +77,7 @@ uint32_t Mapviewer::CreateSession(const std::string& client)
 
     lastSession++;
     this->client = client;
-    
+
     TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
     return lastSession;
 }
@@ -214,7 +223,7 @@ uint32_t Mapviewer::CreateMapViewInstance(
             mapViewSize._1, mapViewSize._2, WinWidth, WinHeight);
         return 0;
     }
-    
+
     lastViewInstance++;
 
     NC_MP_SetMapMoveWithCar(lastSession, 1);
@@ -396,8 +405,8 @@ void Mapviewer::SetCameraHeadingAngle(const uint32_t& sessionHandle, const uint3
 
     /* WARNING: this API exists but is not effective */
     TRACE_DEBUG("NC_MP_SetMapRotate %" PRIu32 "%" PRId32, lastSession, heading);
-    NC_MP_SetMapRotate(lastSession, heading); 
-    
+    NC_MP_SetMapRotate(lastSession, heading);
+
     TRACE_DEBUG("glvOnReDraw");
     glvOnReDraw(glv_map_context);
 }

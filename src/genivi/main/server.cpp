@@ -1,3 +1,12 @@
+/*
+ * GPS Navigation ---An open source GPS navigation core software
+ *
+ *
+ * Copyright (c) 2016  Aisin AW, Ltd
+ *
+ * This program is dual licensed under GPL version 2 or a commercial license.
+ * See the LICENSE file distributed with this source file.
+ */
 #include <stdio.h>
 #include <signal.h>
 #include "genivi-navicore.h"
@@ -10,11 +19,6 @@ void leave_signal_handler(int sig)
 {
     dispatcher.leave();
 }
-
-/*static void *dbusServerThread(void *no_arg)
-{
-    dbusServerLoop(no_arg);
-}*/
 
 void dbusServerLoop(Navicore **naviCore, Mapviewer **mapViewer)
 {
@@ -31,21 +35,3 @@ void dbusServerLoop(Navicore **naviCore, Mapviewer **mapViewer)
 
     dispatcher.enter();
 }
-
-/*int createDbusServerThread(void)
-{
-    pthread_t p;
-    pthread_attr_t attr;
-
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    int ret = pthread_create(&p, &attr, dbusServerThread, NULL);
-    if (ret != 0)
-        TRACE_ERROR("pthread_create for dbusServerThread failed (err: %s)",
-            ret == EAGAIN ? "EAGAIN" :
-            ret == EINVAL ? "EINVAL" :
-            ret == EPERM   ? "EPERM" : "UNKNOWN");
-    pthread_attr_destroy(&attr);
-
-    return ret;
-}*/

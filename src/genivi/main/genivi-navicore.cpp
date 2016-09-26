@@ -1,3 +1,12 @@
+/*
+ * GPS Navigation ---An open source GPS navigation core software
+ *
+ *
+ * Copyright (c) 2016  Aisin AW, Ltd
+ *
+ * This program is dual licensed under GPL version 2 or a commercial license.
+ * See the LICENSE file distributed with this source file.
+ */
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -55,7 +64,7 @@ uint32_t Navicore::CreateSession_internal(void)
 {
 	int rc;
 
-	naviStartUpResolution(resolution); 
+	naviStartUpResolution(resolution);
 	naviStartUpRegion(region);
 
     if (region == NAVI_REGION_JAPAN) {
@@ -109,7 +118,7 @@ uint32_t Navicore::CreateSession(const std::string& client)
 
     lastSession++;
     this->client = client;
-    
+
     TRACE_INFO("SESSION ADAPTOR - Created session %d [%s]", lastSession, client.c_str());
     return lastSession;
 }
@@ -351,7 +360,7 @@ void Navicore::SetWaypoints(
     if (startFromCurrentPosition)
     {
         SMCARSTATE carState;
-        
+
         if (NC_DM_GetCarState(&carState, e_SC_CARLOCATION_NOW) == NC_SUCCESS)
         {
             /* Add current position in the memorized list of waypoints: */

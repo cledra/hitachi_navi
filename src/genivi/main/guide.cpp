@@ -3,16 +3,18 @@
  *
  *
  * Copyright (c) 2016  Hitachi, Ltd.
+ * Copyright (c) 2016  Aisin AW, Ltd
  *
  * This program is dual licensed under GPL version 2 or a commercial license.
  * See the LICENSE file distributed with this source file.
  */
-
 /*
  * guide.c
  *
  *  Created on: 2015/11/05
  *      Author:t.aikawa
+ *  Modified on: 2016/09/26
+ *      Author:clement.dransart@awtce.be
  */
 
 #include <pthread.h>
