@@ -38,8 +38,6 @@ extern "C" {
 #include "navi.h"
 #include "HMI_Icon.h"
 
-#include "genivi-navicore.h"
-#include "genivi-mapviewer.h"
 #include "NaviTrace.h"
 #include "server.h"
 #include "navi_genivi.h"

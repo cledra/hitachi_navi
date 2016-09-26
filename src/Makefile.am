@@ -684,7 +684,6 @@ navi_genivi_CPPFLAGS = \
         -I$(top_srcdir)/src/sms/sms-core/SMUtil \
         -I$(top_srcdir)/src/glview \
         -I$(top_srcdir)/src/yspng \
-        -I$(top_srcdir)/src/main \
         -I$(top_srcdir)/src/pthread
 
 navi_genivi_CFLAGS = -fPIC \

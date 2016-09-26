@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include "NaviTrace.h"
+#include "server.h"
 
 DBus::BusDispatcher dispatcher;
 

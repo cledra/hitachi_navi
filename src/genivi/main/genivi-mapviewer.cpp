@@ -24,7 +24,7 @@ extern "C" {
     #include "navicore.h"
 }
 
-#include "navi.h"
+#include "navi.h" // Does this work ???
 #include "navi_genivi.h"
 
 extern void sample_hmi_draw_compass(FLOAT rotate);
