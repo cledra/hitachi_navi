@@ -350,7 +350,8 @@ seat_handle_capabilities(void *data, struct wl_seat *seat,
 	keyboard = wl_seat_get_keyboard(seat);
 	wl_keyboard_add_listener(keyboard, &keyboard_listener, NULL);
     } else if (!(caps & WL_SEAT_CAPABILITY_KEYBOARD)) {
-	wl_keyboard_destroy(keyboard);
+	/* appli crashes when calling this function if keyboard is not plugged: */
+	/*wl_keyboard_destroy(keyboard);*/
 	keyboard = NULL;
     }
 
