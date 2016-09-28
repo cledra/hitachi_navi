@@ -62,42 +62,42 @@ Navicore::Navicore( DBus::Connection &connection )
 
 uint32_t Navicore::CreateSession_internal(void)
 {
-	int rc;
+    int rc;
 
-	naviStartUpResolution(resolution);
-	naviStartUpRegion(region);
+    naviStartUpResolution(resolution);
+    naviStartUpRegion(region);
 
     if (region == NAVI_REGION_JAPAN) {
-		set_map_draw_japan(1);
-		hmiMAP_MAX_SCALE = 12;
-	} else {
-		set_map_draw_japan(0);
-		hmiMAP_MAX_SCALE = 11;
-	}
+        set_map_draw_japan(1);
+        hmiMAP_MAX_SCALE = 12;
+    } else {
+        set_map_draw_japan(0);
+        hmiMAP_MAX_SCALE = 11;
+    }
 
-	glvDisplay = glvOpenDisplay(dpyName);
-	if(!glvDisplay){
-		TRACE_ERROR("glvOpenDisplay() failed");
-		return -1;
-	}
+    glvDisplay = glvOpenDisplay(dpyName);
+    if(!glvDisplay){
+        TRACE_ERROR("glvOpenDisplay() failed");
+        return -1;
+    }
 
-	NC_MP_SetBitmapFontCB(BitmapFontCallBack);
-	NC_MP_SetImageReadForFileCB(ReadImageForFileCallBack);
-	NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);
-	NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);
+    NC_MP_SetBitmapFontCB(BitmapFontCallBack);
+    NC_MP_SetImageReadForFileCB(ReadImageForFileCallBack);
+    NC_MP_SetImageReadForImageCB(SetImageForMemoryCallBack);
+    NC_MP_SetMapDrawEndCB(MapDrawEndCallBack);
 
-	rc = NC_Initialize(WinWidth, WinHeight,
+    rc = NC_Initialize(WinWidth, WinHeight,
             navi_config_user_data_path, navi_config_map_db_path, "locatorPath");
-	if(NC_SUCCESS != rc){
-		TRACE_ERROR("NC_Initialize error");
-		TRACE_ERROR("\ttuser data path: %s", navi_config_user_data_path);
-		TRACE_ERROR("\tmap db path: %s", navi_config_map_db_path);
-		return -1;
-	}
+    if(NC_SUCCESS != rc){
+        TRACE_ERROR("NC_Initialize error");
+        TRACE_ERROR("\ttuser data path: %s", navi_config_user_data_path);
+        TRACE_ERROR("\tmap db path: %s", navi_config_map_db_path);
+        return -1;
+    }
 
-	glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;
-	glv_input_func.touch_down   = sample_hmi_button_down;
-	glv_input_func.touch_up     = sample_hmi_button_up;
+    glv_input_func.keyboard_key = sample_hmi_keyboard_handle_key;
+    glv_input_func.touch_down   = sample_hmi_button_down;
+    glv_input_func.touch_up     = sample_hmi_button_up;
 
     return 0;
 }
@@ -305,8 +305,8 @@ void Navicore::SetIconVisibilityCoord(IconIndex index, bool visible,
         { IconNum::FLAG_START_NUM, IconNum::FLAG_DEST_NUM, IconNum::FLAG_PIN_NUM };
 
     demo_icon_info[index].IconID = icon_id[index];
-    demo_icon_info[index].Latitude		= (INT32)(lat*1024.0*3600.0);
-    demo_icon_info[index].Longititude	= (INT32)(lon*1024.0*3600.0);
+    demo_icon_info[index].Latitude      = (INT32)(lat*1024.0*3600.0);
+    demo_icon_info[index].Longititude   = (INT32)(lon*1024.0*3600.0);
     demo_disp_info[index] = visible ? 1 : 0;
 
     if (commit)
@@ -423,7 +423,7 @@ void Navicore::SetWaypoints(
     }
 
     sample_hmi_set_pin_mode(0);
-	sample_hmi_request_mapDraw();
+    sample_hmi_request_mapDraw();
 }
 
 void Navicore::GetWaypoints(
@@ -514,7 +514,7 @@ void Navicore::CalculateRoute(
     SetIconVisibility(FLAG_PIN_IDX, false, true);
 
     sample_hmi_set_pin_mode(0);
-	sample_hmi_request_mapDraw();
+    sample_hmi_request_mapDraw();
 }
 
 void Navicore::CancelRouteCalculation(
@@ -538,7 +538,7 @@ void Navicore::CancelRouteCalculation(
     SetIconVisibility(FLAG_PIN_IDX, true, true);
 
     sample_hmi_set_pin_mode(1);
-	sample_hmi_request_mapDraw();
+    sample_hmi_request_mapDraw();
 }
 
 std::vector< uint32_t > Navicore::CalculateRoutes(

@@ -235,21 +235,21 @@ uint32_t Mapviewer::CreateMapViewInstance(
 
     glvInitTimer();
 
-    SurfaceViewEventFunc.init		= map_init;
-    SurfaceViewEventFunc.reshape	= map_reshape;
-    SurfaceViewEventFunc.redraw	    = map_redraw;
-    SurfaceViewEventFunc.update	    = NULL;
-    SurfaceViewEventFunc.timer	    = map_timer;
-    SurfaceViewEventFunc.gesture	= map_gesture;
+    SurfaceViewEventFunc.init       = map_init;
+    SurfaceViewEventFunc.reshape    = map_reshape;
+    SurfaceViewEventFunc.redraw     = map_redraw;
+    SurfaceViewEventFunc.update     = NULL;
+    SurfaceViewEventFunc.timer      = map_timer;
+    SurfaceViewEventFunc.gesture    = map_gesture;
 
     glv_map_context = glvCreateSurfaceView(glv_map_window, lastSession, &SurfaceViewEventFunc);
 
-    hmi_SurfaceViewEventFunc.init		= hmi_init;
-    hmi_SurfaceViewEventFunc.reshape	= NULL;
-    hmi_SurfaceViewEventFunc.redraw	    = NULL;
-    hmi_SurfaceViewEventFunc.update	    = hmi_update;
-    hmi_SurfaceViewEventFunc.timer	    = NULL;
-    hmi_SurfaceViewEventFunc.gesture	= NULL;
+    hmi_SurfaceViewEventFunc.init       = hmi_init;
+    hmi_SurfaceViewEventFunc.reshape    = NULL;
+    hmi_SurfaceViewEventFunc.redraw     = NULL;
+    hmi_SurfaceViewEventFunc.update     = hmi_update;
+    hmi_SurfaceViewEventFunc.timer      = NULL;
+    hmi_SurfaceViewEventFunc.gesture    = NULL;
 
     glv_hmi_context = glvCreateSurfaceView(glv_hmi_window, lastSession, &hmi_SurfaceViewEventFunc);
 
