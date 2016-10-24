@@ -125,6 +125,7 @@ class Navicore :
         void SetIconVisibilityCoord(IconIndex index, bool visible,
             double lat = 0.0, double lon = 0.0, bool commit = false);
         void SetIconVisibility(IconIndex index, bool visible, bool commit = false);
+        void FixSimulationStatus();
 
         uint32_t lastSession, lastRoute;
         std::string client;

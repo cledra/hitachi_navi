@@ -424,6 +424,8 @@ void Navicore::SetWaypoints(
 
     sample_hmi_set_pin_mode(0);
     sample_hmi_request_mapDraw();
+    sample_hmi_set_fource_update_mode();
+    sample_hmi_request_update();
 }
 
 void Navicore::GetWaypoints(
@@ -515,6 +517,8 @@ void Navicore::CalculateRoute(
 
     sample_hmi_set_pin_mode(0);
     sample_hmi_request_mapDraw();
+    sample_hmi_set_fource_update_mode();
+    sample_hmi_request_update();
 }
 
 void Navicore::CancelRouteCalculation(
@@ -539,6 +543,8 @@ void Navicore::CancelRouteCalculation(
 
     sample_hmi_set_pin_mode(1);
     sample_hmi_request_mapDraw();
+    sample_hmi_set_fource_update_mode();
+    sample_hmi_request_update();
 }
 
 std::vector< uint32_t > Navicore::CalculateRoutes(
@@ -606,10 +612,30 @@ std::vector< ::DBus::Struct< uint32_t, uint32_t > > Navicore::GetBlockedRouteStr
     return version;
 }
 
+void Navicore::FixSimulationStatus()
+{
+    /* if simu was launched from GUI and we were not informed : */
+    if (IsSimulationMode == false && NC_Simulation_IsInSimu() == 1)
+    {
+        IsSimulationMode = true;
+        SimulationStatus = SIMULATION_STATUS_RUNNING;
+    }
+
+    /* if simu was stopped from GUI and we were not informed : */
+    if (IsSimulationMode == true && NC_Simulation_IsInSimu() == 0)
+    {
+        IsSimulationMode = false;
+        SimulationStatus = SIMULATION_STATUS_NO_SIMULATION;
+    }
+}
+
 void Navicore::SetSimulationMode(const uint32_t& sessionHandle, const bool& activate)
 {
     TRACE_INFO("activate = %d (%d)", activate, IsSimulationMode);
     if (sessionHandle != lastSession || !sessionHandle) return;
+
+    /* if simu was launched / stopped from GUI and we were not informed : */
+    FixSimulationStatus();
 
     if (activate == IsSimulationMode) return; // nothing to do
 
@@ -631,6 +657,10 @@ void Navicore::SetSimulationMode(const uint32_t& sessionHandle, const bool& acti
 int32_t Navicore::GetSimulationStatus()
 {
     TRACE_INFO("SimulationStatus: %d", (int)SimulationStatus);
+
+    /* if simu was launched / stopped from GUI and we were not informed : */
+    FixSimulationStatus();
+    
     return SimulationStatus;
 }
 
